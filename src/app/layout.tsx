@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { HeroUIProvider } from "@heroui/react";
-import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,22 +22,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          <HeroUIProvider>
-            <AuthProvider>
-              <div className="min-h-screen bg-background text-foreground">
-                {children}
-              </div>
-            </AuthProvider>
-          </HeroUIProvider>
-        </ThemeProvider>
+        <HeroUIProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            {children}
+          </div>
+        </HeroUIProvider>
       </body>
     </html>
   );
