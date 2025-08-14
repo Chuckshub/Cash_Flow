@@ -74,6 +74,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
 
   // Generate 13 weeks of data starting from current week
   const weeklyData = useMemo(() => {
+    console.log('Recalculating weeklyData with predictions:', predictions);
     const currentWeekStart = getCurrentWeekStart();
     const weeks: WeekData[] = [];
     
@@ -131,9 +132,12 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
       });
       
       // Get predictions for this week
-      const prediction = predictions.find(p => p.weekNumber === i + 1);
+      const weekNumber = i + 1;
+      const prediction = predictions.find(p => p.weekNumber === weekNumber);
       const predictedInflows = prediction?.inflows || 0;
       const predictedOutflows = prediction?.outflows || 0;
+      
+      console.log(`Week ${weekNumber}: prediction found:`, prediction, 'predicted inflows:', predictedInflows, 'predicted outflows:', predictedOutflows);
       
       // Calculate totals
       const totalInflows = actualInflows + predictedInflows;
@@ -145,10 +149,10 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
       const hasActualData = weekTransactions.length > 0;
       
       weeks.push({
-        weekNumber: i + 1,
+        weekNumber,
         weekStart,
         weekEnd,
-        weekLabel: `Week ${i + 1}`,
+        weekLabel: `Week ${weekNumber}`,
         actualInflows,
         actualOutflows,
         predictedInflows,
@@ -182,11 +186,14 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
   };
 
   const handleEditPrediction = (weekNumber: number) => {
+    console.log('Opening prediction modal for week:', weekNumber);
     const existing = predictions.find(p => p.weekNumber === weekNumber);
+    console.log('Existing prediction found:', existing);
     setEditingWeek(weekNumber);
     setTempInflows(existing?.inflows.toString() || '');
     setTempOutflows(existing?.outflows.toString() || '');
     setTempDescription(existing?.description || '');
+    console.log('Set temp values - inflows:', existing?.inflows.toString() || '', 'outflows:', existing?.outflows.toString() || '', 'description:', existing?.description || '');
     onOpen();
   };
 
@@ -196,17 +203,23 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     const inflows = parseFloat(tempInflows) || 0;
     const outflows = parseFloat(tempOutflows) || 0;
     
+    console.log('Saving prediction for week:', editingWeek, 'inflows:', inflows, 'outflows:', outflows, 'description:', tempDescription);
+    
     setPredictions(prev => {
       const filtered = prev.filter(p => p.weekNumber !== editingWeek);
       if (inflows > 0 || outflows > 0) {
-        filtered.push({
+        const newPrediction = {
           weekNumber: editingWeek,
           inflows,
           outflows,
           description: tempDescription
-        });
+        };
+        console.log('Adding new prediction:', newPrediction);
+        filtered.push(newPrediction);
       }
-      return filtered.sort((a, b) => a.weekNumber - b.weekNumber);
+      const newPredictions = filtered.sort((a, b) => a.weekNumber - b.weekNumber);
+      console.log('New predictions array:', newPredictions);
+      return newPredictions;
     });
     
     onClose();
