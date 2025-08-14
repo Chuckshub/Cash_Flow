@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Table,
   TableHeader,
@@ -19,50 +19,34 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure
+  useDisclosure,
+  Textarea
 } from '@heroui/react';
-import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle, Sparkles } from 'lucide-react';
+import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle } from 'lucide-react';
 import { Transaction } from './CSVUpload';
-
-interface WeekData {
-  weekNumber: number;
-  weekStart: Date;
-  weekEnd: Date;
-  weekLabel: string;
-  actualInflows: number;
-  actualOutflows: number;
-  predictedInflows: number;
-  predictedOutflows: number;
-  totalInflows: number;
-  totalOutflows: number;
-  netFlow: number;
-  runningBalance: number;
-  hasActualData: boolean;
-  transactionCount: number;
-  categoryBreakdown: { [category: string]: { inflows: number; outflows: number; count: number } };
-}
-
-interface PredictionEntry {
-  weekNumber: number;
-  inflows: number;
-  outflows: number;
-  description?: string;
-}
 
 interface WeeklyCashFlowTableProps {
   transactions: Transaction[];
   initialBalance?: number;
 }
 
+// Simple prediction structure
+interface Prediction {
+  weekIndex: number; // 0-12 for the 13 weeks
+  inflowAmount: number;
+  outflowAmount: number;
+  description: string;
+}
+
 export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }: WeeklyCashFlowTableProps) {
-  const [predictions, setPredictions] = useState<PredictionEntry[]>([]);
-  const [editingWeek, setEditingWeek] = useState<number | null>(null);
-  const [tempInflows, setTempInflows] = useState('');
-  const [tempOutflows, setTempOutflows] = useState('');
-  const [tempDescription, setTempDescription] = useState('');
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [editingWeekIndex, setEditingWeekIndex] = useState<number | null>(null);
+  const [inflowInput, setInflowInput] = useState('');
+  const [outflowInput, setOutflowInput] = useState('');
+  const [descriptionInput, setDescriptionInput] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Get the start of the current week (Sunday)
+  // Get current week start (Sunday)
   const getCurrentWeekStart = () => {
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -72,41 +56,25 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     return weekStart;
   };
 
-  // Generate 13 weeks of data starting from current week
+  // Generate 13 weeks of data
   const weeklyData = useMemo(() => {
-    console.log('Recalculating weeklyData with predictions:', predictions);
     const currentWeekStart = getCurrentWeekStart();
-    const weeks: WeekData[] = [];
+    const weeks = [];
     
-    // Group actual transactions by week
-    const transactionsByWeek = new Map<string, Transaction[]>();
-    transactions.forEach(transaction => {
-      const transactionDate = new Date(transaction.date);
-      const weekStart = new Date(transactionDate);
-      weekStart.setDate(transactionDate.getDate() - transactionDate.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekKey = weekStart.toISOString().split('T')[0];
-      
-      if (!transactionsByWeek.has(weekKey)) {
-        transactionsByWeek.set(weekKey, []);
-      }
-      transactionsByWeek.get(weekKey)!.push(transaction);
-    });
-
-    let runningBalance = initialBalance;
-
     for (let i = 0; i < 13; i++) {
       const weekStart = new Date(currentWeekStart);
       weekStart.setDate(currentWeekStart.getDate() + (i * 7));
       
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
       
-      const weekKey = weekStart.toISOString().split('T')[0];
-      const weekTransactions = transactionsByWeek.get(weekKey) || [];
+      // Find transactions for this week
+      const weekTransactions = transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate >= weekStart && transactionDate <= weekEnd;
+      });
       
-      // Calculate actual flows from transactions
+      // Calculate actual flows
       const actualInflows = weekTransactions
         .filter(t => t.type === 'inflow')
         .reduce((sum, t) => sum + t.amount, 0);
@@ -115,57 +83,45 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
         .filter(t => t.type === 'outflow')
         .reduce((sum, t) => sum + t.amount, 0);
       
-      // Calculate category breakdown for this week
-      const categoryBreakdown: { [category: string]: { inflows: number; outflows: number; count: number } } = {};
-      weekTransactions.forEach(transaction => {
-        const category = transaction.category || 'Uncategorized';
-        if (!categoryBreakdown[category]) {
-          categoryBreakdown[category] = { inflows: 0, outflows: 0, count: 0 };
-        }
-        
-        if (transaction.type === 'inflow') {
-          categoryBreakdown[category].inflows += transaction.amount;
-        } else {
-          categoryBreakdown[category].outflows += transaction.amount;
-        }
-        categoryBreakdown[category].count += 1;
-      });
+      // Get prediction for this week
+      const prediction = predictions.find(p => p.weekIndex === i);
+      const predictedInflows = prediction?.inflowAmount || 0;
+      const predictedOutflows = prediction?.outflowAmount || 0;
       
-      // Get predictions for this week
-      const weekNumber = i + 1;
-      const prediction = predictions.find(p => p.weekNumber === weekNumber);
-      const predictedInflows = prediction?.inflows || 0;
-      const predictedOutflows = prediction?.outflows || 0;
+      // Calculate net flow
+      const netFlow = (actualInflows + predictedInflows) - (actualOutflows + predictedOutflows);
       
-      console.log(`Week ${weekNumber}: prediction found:`, prediction, 'predicted inflows:', predictedInflows, 'predicted outflows:', predictedOutflows);
-      
-      // Calculate totals
-      const totalInflows = actualInflows + predictedInflows;
-      const totalOutflows = actualOutflows + predictedOutflows;
-      const netFlow = totalInflows - totalOutflows;
-      
-      runningBalance += netFlow;
-      
-      const hasActualData = weekTransactions.length > 0;
+      // Get categories for this week
+      const categories = weekTransactions.reduce((acc, t) => {
+        const cat = t.category || 'Uncategorized';
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
       
       weeks.push({
-        weekNumber,
+        weekIndex: i,
+        weekNumber: i + 1,
         weekStart,
         weekEnd,
-        weekLabel: `Week ${weekNumber}`,
         actualInflows,
         actualOutflows,
         predictedInflows,
         predictedOutflows,
-        totalInflows,
-        totalOutflows,
         netFlow,
-        runningBalance,
-        hasActualData,
+        runningBalance: 0, // Will be calculated below
+        hasActualData: weekTransactions.length > 0,
         transactionCount: weekTransactions.length,
-        categoryBreakdown
+        categories,
+        prediction
       });
     }
+    
+    // Calculate running balances
+    let runningBalance = initialBalance;
+    weeks.forEach(week => {
+      runningBalance += week.netFlow;
+      week.runningBalance = runningBalance;
+    });
     
     return weeks;
   }, [transactions, predictions, initialBalance]);
@@ -185,116 +141,57 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     return `${startStr} - ${endStr}`;
   };
 
-  const handleEditPrediction = (weekNumber: number) => {
-    console.log('Opening prediction modal for week:', weekNumber);
-    const existing = predictions.find(p => p.weekNumber === weekNumber);
-    console.log('Existing prediction found:', existing);
-    setEditingWeek(weekNumber);
-    setTempInflows(existing?.inflows.toString() || '');
-    setTempOutflows(existing?.outflows.toString() || '');
-    setTempDescription(existing?.description || '');
-    console.log('Set temp values - inflows:', existing?.inflows.toString() || '', 'outflows:', existing?.outflows.toString() || '', 'description:', existing?.description || '');
+  const openPredictionModal = (weekIndex: number) => {
+    const existing = predictions.find(p => p.weekIndex === weekIndex);
+    setEditingWeekIndex(weekIndex);
+    setInflowInput(existing?.inflowAmount.toString() || '');
+    setOutflowInput(existing?.outflowAmount.toString() || '');
+    setDescriptionInput(existing?.description || '');
     onOpen();
   };
 
-  const handleSavePrediction = () => {
-    if (editingWeek === null) return;
+  const savePrediction = () => {
+    if (editingWeekIndex === null) return;
     
-    const inflows = parseFloat(tempInflows) || 0;
-    const outflows = parseFloat(tempOutflows) || 0;
+    const inflowAmount = parseFloat(inflowInput) || 0;
+    const outflowAmount = parseFloat(outflowInput) || 0;
     
-    console.log('Saving prediction for week:', editingWeek, 'inflows:', inflows, 'outflows:', outflows, 'description:', tempDescription);
+    if (inflowAmount === 0 && outflowAmount === 0) {
+      // Remove prediction if both are zero
+      setPredictions(prev => prev.filter(p => p.weekIndex !== editingWeekIndex));
+    } else {
+      // Add or update prediction
+      setPredictions(prev => {
+        const filtered = prev.filter(p => p.weekIndex !== editingWeekIndex);
+        filtered.push({
+          weekIndex: editingWeekIndex,
+          inflowAmount,
+          outflowAmount,
+          description: descriptionInput
+        });
+        return filtered;
+      });
+    }
     
-    setPredictions(prev => {
-      const filtered = prev.filter(p => p.weekNumber !== editingWeek);
-      if (inflows > 0 || outflows > 0) {
-        const newPrediction = {
-          weekNumber: editingWeek,
-          inflows,
-          outflows,
-          description: tempDescription
-        };
-        console.log('Adding new prediction:', newPrediction);
-        filtered.push(newPrediction);
-      }
-      const newPredictions = filtered.sort((a, b) => a.weekNumber - b.weekNumber);
-      console.log('New predictions array:', newPredictions);
-      return newPredictions;
-    });
-    
+    // Reset and close
+    setInflowInput('');
+    setOutflowInput('');
+    setDescriptionInput('');
+    setEditingWeekIndex(null);
     onClose();
-    setEditingWeek(null);
-    setTempInflows('');
-    setTempOutflows('');
-    setTempDescription('');
   };
 
+  // Calculate totals
   const totalActualInflows = weeklyData.reduce((sum, week) => sum + week.actualInflows, 0);
   const totalActualOutflows = weeklyData.reduce((sum, week) => sum + week.actualOutflows, 0);
   const totalPredictedInflows = weeklyData.reduce((sum, week) => sum + week.predictedInflows, 0);
   const totalPredictedOutflows = weeklyData.reduce((sum, week) => sum + week.predictedOutflows, 0);
-  const totalNetFlow = weeklyData.reduce((sum, week) => sum + week.netFlow, 0);
   const finalBalance = weeklyData[weeklyData.length - 1]?.runningBalance || initialBalance;
-
-  // Calculate category distribution across all weeks
-  const categoryDistribution = useMemo(() => {
-    const distribution: { [category: string]: { totalAmount: number; weekCount: number; transactions: number } } = {};
-    
-    weeklyData.forEach(week => {
-      Object.entries(week.categoryBreakdown).forEach(([category, data]) => {
-        if (!distribution[category]) {
-          distribution[category] = { totalAmount: 0, weekCount: 0, transactions: 0 };
-        }
-        distribution[category].totalAmount += data.inflows + data.outflows;
-        distribution[category].weekCount += 1;
-        distribution[category].transactions += data.count;
-      });
-    });
-    
-    return Object.entries(distribution)
-      .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
-      .slice(0, 6); // Top 6 categories
-  }, [weeklyData]);
 
   return (
     <div className="space-y-6">
-      {/* AI Category Distribution Banner */}
-      {categoryDistribution.length > 0 && (
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
-          <CardBody className="p-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-xl">
-                  <Sparkles className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">AI-Categorized Data Distribution</h3>
-                  <p className="text-gray-600">Your uploaded transactions automatically organized across 13 weeks</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {categoryDistribution.map(([category, data]) => (
-                  <div key={category} className="text-center p-3 bg-white rounded-lg border border-purple-200">
-                    <p className="text-sm font-semibold text-gray-900 truncate" title={category}>
-                      {category}
-                    </p>
-                    <p className="text-xs text-purple-700 font-medium">
-                      {formatCurrency(data.totalAmount)}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {data.transactions} transactions • {data.weekCount} weeks
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-white border border-green-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
@@ -329,13 +226,19 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
           </CardBody>
         </Card>
         
-        <Card className={`bg-white border shadow-sm hover:shadow-md transition-shadow ${totalNetFlow >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+        <Card className={`bg-white border shadow-sm hover:shadow-md transition-shadow ${
+          (totalActualInflows + totalPredictedInflows) - (totalActualOutflows + totalPredictedOutflows) >= 0 
+            ? 'border-green-200' : 'border-red-200'
+        }`}>
           <CardBody className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-1">Net Cash Flow</p>
-                <p className={`text-xl font-bold ${totalNetFlow >= 0 ? 'text-green-800' : 'text-red-800'}`}>
-                  {formatCurrency(totalNetFlow)}
+                <p className={`text-xl font-bold ${
+                  (totalActualInflows + totalPredictedInflows) - (totalActualOutflows + totalPredictedOutflows) >= 0 
+                    ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {formatCurrency((totalActualInflows + totalPredictedInflows) - (totalActualOutflows + totalPredictedOutflows))}
                 </p>
               </div>
               <DollarSign className="h-6 w-6 text-gray-600" />
@@ -368,47 +271,28 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">13-Week Cash Flow Forecast</h3>
-                <p className="text-gray-600">Plan ahead with predictive analytics and scenario modeling</p>
+                <p className="text-gray-600">AI-categorized actual data + your predictions = complete cash flow visibility</p>
               </div>
             </div>
-            <Button
-              color="primary"
-              variant="solid"
-              size="lg"
-              startContent={<Plus className="h-5 w-5" />}
-              onClick={() => handleEditPrediction(1)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
-            >
-              Add Predictions
-            </Button>
+            <Chip color="secondary" variant="flat" className="bg-purple-100 text-purple-800 font-medium">
+              {predictions.length} Active Predictions
+            </Chip>
           </div>
         </CardBody>
       </Card>
 
-      {/* 13-Week Cash Flow Table */}
+      {/* 13-Week Table */}
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 p-6">
-          <div className="flex flex-row items-center justify-between w-full">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">13-Week Rolling Forecast</h3>
-              <p className="text-gray-600 mt-1">Actual data from uploads + predicted cash flows</p>
-            </div>
-            <Chip 
-              color="secondary" 
-              variant="flat"
-              className="bg-purple-100 text-purple-800 font-medium"
-            >
-              Interactive Planning
-            </Chip>
-          </div>
+          <h3 className="text-xl font-bold text-gray-900">13-Week Rolling Forecast</h3>
         </CardHeader>
         <CardBody className="p-0">
           <Table 
-            aria-label="13-week cash flow table"
+            aria-label="13-week cash flow forecast"
             classNames={{
-              wrapper: "bg-white rounded-none",
-              th: "bg-gray-50 text-gray-700 font-semibold border-b border-gray-200",
-              td: "text-gray-900 border-b border-gray-100"
+              wrapper: "bg-white",
+              th: "bg-gray-50 text-gray-700 font-semibold",
+              td: "text-gray-900"
             }}
           >
             <TableHeader>
@@ -423,111 +307,101 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
             </TableHeader>
             <TableBody>
               {weeklyData.map((week) => (
-                <TableRow key={week.weekNumber} className="hover:bg-gray-50 transition-colors">
+                <TableRow key={week.weekIndex} className="hover:bg-gray-50">
                   <TableCell>
                     <div>
-                      <p className="font-semibold text-gray-900">{week.weekLabel}</p>
+                      <p className="font-semibold text-gray-900">Week {week.weekNumber}</p>
                       <p className="text-sm text-gray-600">
                         {formatDateRange(week.weekStart, week.weekEnd)}
                       </p>
                       {week.hasActualData && (
-                        <div className="mt-2 space-y-1">
-                          <Chip size="sm" color="success" variant="flat" className="bg-green-100 text-green-800">
-                            📊 {week.transactionCount} actual transactions
+                        <div className="mt-2">
+                          <Chip size="sm" variant="flat" className="bg-green-100 text-green-800">
+                            📊 {week.transactionCount} transactions
                           </Chip>
-                          {Object.keys(week.categoryBreakdown).length > 0 && (
+                          {Object.keys(week.categories).length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {Object.entries(week.categoryBreakdown).slice(0, 2).map(([category, data]) => (
-                                <Chip 
-                                  key={category} 
-                                  size="sm" 
-                                  variant="flat" 
-                                  className="bg-purple-100 text-purple-800 text-xs"
-                                >
-                                  {category}: {data.count}
+                              {Object.entries(week.categories).slice(0, 2).map(([category, count]) => (
+                                <Chip key={category} size="sm" variant="flat" className="bg-purple-100 text-purple-800 text-xs">
+                                  {category}: {count}
                                 </Chip>
                               ))}
-                              {Object.keys(week.categoryBreakdown).length > 2 && (
-                                <Chip size="sm" variant="flat" className="bg-gray-100 text-gray-600 text-xs">
-                                  +{Object.keys(week.categoryBreakdown).length - 2} more
-                                </Chip>
-                              )}
                             </div>
                           )}
                         </div>
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
                     <div>
-                      <span className={`font-semibold text-lg ${
+                      <span className={`font-bold text-lg ${
                         week.actualInflows > 0 ? 'text-green-700' : 'text-gray-400'
                       }`}>
                         {formatCurrency(week.actualInflows)}
                       </span>
                       {week.actualInflows > 0 && (
-                        <p className="text-xs text-green-600 mt-1">From uploaded data</p>
+                        <p className="text-xs text-green-600">From CSV data</p>
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
                     <div>
-                      <span className={`font-semibold text-lg ${
+                      <span className={`font-bold text-lg ${
                         week.actualOutflows > 0 ? 'text-red-700' : 'text-gray-400'
                       }`}>
                         {formatCurrency(week.actualOutflows)}
                       </span>
                       {week.actualOutflows > 0 && (
-                        <p className="text-xs text-red-600 mt-1">From uploaded data</p>
+                        <p className="text-xs text-red-600">From CSV data</p>
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
                     <div>
-                      <span className={`font-semibold text-lg ${
+                      <span className={`font-bold text-lg ${
                         week.predictedInflows > 0 ? 'text-blue-700' : 'text-gray-400'
                       }`}>
                         {formatCurrency(week.predictedInflows)}
                       </span>
-                      {week.predictedInflows > 0 && (
-                        <p className="text-xs text-blue-600 mt-1">💡 Predicted</p>
+                      {week.predictedInflows > 0 && week.prediction?.description && (
+                        <p className="text-xs text-blue-600 truncate" title={week.prediction.description}>
+                          💡 {week.prediction.description}
+                        </p>
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
                     <div>
-                      <span className={`font-semibold text-lg ${
+                      <span className={`font-bold text-lg ${
                         week.predictedOutflows > 0 ? 'text-orange-700' : 'text-gray-400'
                       }`}>
                         {formatCurrency(week.predictedOutflows)}
                       </span>
-                      {week.predictedOutflows > 0 && (
-                        <p className="text-xs text-orange-600 mt-1">💡 Predicted</p>
+                      {week.predictedOutflows > 0 && week.prediction?.description && (
+                        <p className="text-xs text-orange-600 truncate" title={week.prediction.description}>
+                          💡 {week.prediction.description}
+                        </p>
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
-                    <div className="text-center">
-                      <Chip
-                        color={week.netFlow >= 0 ? 'success' : 'danger'}
-                        variant="flat"
-                        size="md"
-                        className={`font-bold ${
-                          week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {formatCurrency(week.netFlow)}
-                      </Chip>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {week.actualInflows + week.actualOutflows > 0 && week.predictedInflows + week.predictedOutflows > 0 
-                          ? 'Actual + Predicted'
-                          : week.actualInflows + week.actualOutflows > 0 
-                          ? 'From actual data'
-                          : 'From predictions'
-                        }
-                      </p>
-                    </div>
+                    <Chip
+                      color={week.netFlow >= 0 ? 'success' : 'danger'}
+                      variant="flat"
+                      size="md"
+                      className={`font-bold ${
+                        week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {formatCurrency(week.netFlow)}
+                    </Chip>
                   </TableCell>
+                  
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span className={`font-bold text-lg ${
@@ -540,31 +414,18 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                       )}
                     </div>
                   </TableCell>
+                  
                   <TableCell>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        size="sm"
-                        variant="solid"
-                        color="primary"
-                        startContent={<Plus className="h-3 w-3" />}
-                        onClick={() => handleEditPrediction(week.weekNumber)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3 py-1"
-                      >
-                        Add Prediction
-                      </Button>
-                      {(week.predictedInflows > 0 || week.predictedOutflows > 0) && (
-                        <Button
-                          size="sm"
-                          variant="light"
-                          color="secondary"
-                          startContent={<Edit className="h-3 w-3" />}
-                          onClick={() => handleEditPrediction(week.weekNumber)}
-                          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 font-medium text-xs"
-                        >
-                          Edit
-                        </Button>
-                      )}
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="solid"
+                      color="primary"
+                      startContent={week.prediction ? <Edit className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                      onClick={() => openPredictionModal(week.weekIndex)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                    >
+                      {week.prediction ? 'Edit' : 'Add'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -573,149 +434,84 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
         </CardBody>
       </Card>
 
-      {/* Edit Prediction Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg" className="bg-white">
+      {/* Simple Prediction Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
         <ModalContent>
           <ModalHeader className="border-b border-gray-200">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Manage Predictions for Week {editingWeek}</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Add predicted cash flows with descriptions to improve your forecast accuracy
-              </p>
-            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              {editingWeekIndex !== null && predictions.find(p => p.weekIndex === editingWeekIndex) ? 'Edit' : 'Add'} Prediction
+            </h3>
+            <p className="text-sm text-gray-600">
+              Week {editingWeekIndex !== null ? editingWeekIndex + 1 : ''}
+              {editingWeekIndex !== null && weeklyData[editingWeekIndex] && (
+                ` (${formatDateRange(weeklyData[editingWeekIndex].weekStart, weeklyData[editingWeekIndex].weekEnd)})`
+              )}
+            </p>
           </ModalHeader>
+          
           <ModalBody className="p-6">
-            {/* Show current week info */}
-            {editingWeek && weeklyData[editingWeek - 1] && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  Week {editingWeek}: {formatDateRange(weeklyData[editingWeek - 1].weekStart, weeklyData[editingWeek - 1].weekEnd)}
-                </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-green-700 font-medium">
-                      Actual Inflows: {formatCurrency(weeklyData[editingWeek - 1].actualInflows)}
-                    </p>
-                    <p className="text-red-700 font-medium">
-                      Actual Outflows: {formatCurrency(weeklyData[editingWeek - 1].actualOutflows)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-blue-700 font-medium">
-                      Current Predicted Inflows: {formatCurrency(weeklyData[editingWeek - 1].predictedInflows)}
-                    </p>
-                    <p className="text-orange-700 font-medium">
-                      Current Predicted Outflows: {formatCurrency(weeklyData[editingWeek - 1].predictedOutflows)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-green-800 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Predicted Inflows
-                  </h4>
-                  <Input
-                    label="Amount"
-                    placeholder="0.00"
-                    value={tempInflows}
-                    onChange={(e) => setTempInflows(e.target.value)}
-                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                    type="number"
-                    step="0.01"
-                    classNames={{
-                      input: "text-gray-900",
-                      label: "text-gray-700 font-medium"
-                    }}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-red-800 flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4" />
-                    Predicted Outflows
-                  </h4>
-                  <Input
-                    label="Amount"
-                    placeholder="0.00"
-                    value={tempOutflows}
-                    onChange={(e) => setTempOutflows(e.target.value)}
-                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                    type="number"
-                    step="0.01"
-                    classNames={{
-                      input: "text-gray-900",
-                      label: "text-gray-700 font-medium"
-                    }}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Edit className="h-4 w-4" />
-                  Description
-                </h4>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Describe this prediction"
-                  placeholder="e.g., Expected client payment, Quarterly rent, Payroll processing"
-                  value={tempDescription}
-                  onChange={(e) => setTempDescription(e.target.value)}
-                  classNames={{
-                    input: "text-gray-900",
-                    label: "text-gray-700 font-medium"
-                  }}
+                  label="Predicted Inflows"
+                  placeholder="0.00"
+                  value={inflowInput}
+                  onChange={(e) => setInflowInput(e.target.value)}
+                  startContent={<TrendingUp className="h-4 w-4 text-green-600" />}
+                  type="number"
+                  step="0.01"
+                  min="0"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Adding descriptions helps you track and remember your predictions
-                </p>
+                
+                <Input
+                  label="Predicted Outflows"
+                  placeholder="0.00"
+                  value={outflowInput}
+                  onChange={(e) => setOutflowInput(e.target.value)}
+                  startContent={<TrendingDown className="h-4 w-4 text-red-600" />}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                />
               </div>
               
-              {/* Prediction Summary */}
-              {(parseFloat(tempInflows) > 0 || parseFloat(tempOutflows) > 0) && (
+              <Textarea
+                label="Description"
+                placeholder="e.g., Expected client payment, Quarterly rent payment, Payroll processing"
+                value={descriptionInput}
+                onChange={(e) => setDescriptionInput(e.target.value)}
+                minRows={2}
+                maxRows={4}
+              />
+              
+              {/* Preview */}
+              {(parseFloat(inflowInput) > 0 || parseFloat(outflowInput) > 0) && (
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-900 mb-2">Prediction Summary</h4>
+                  <h4 className="font-semibold text-blue-900 mb-2">Prediction Preview</h4>
                   <div className="space-y-1 text-sm">
-                    {parseFloat(tempInflows) > 0 && (
-                      <p className="text-green-700">
-                        + {formatCurrency(parseFloat(tempInflows))} inflow
-                      </p>
+                    {parseFloat(inflowInput) > 0 && (
+                      <p className="text-green-700">+ {formatCurrency(parseFloat(inflowInput))} inflow</p>
                     )}
-                    {parseFloat(tempOutflows) > 0 && (
-                      <p className="text-red-700">
-                        - {formatCurrency(parseFloat(tempOutflows))} outflow
-                      </p>
+                    {parseFloat(outflowInput) > 0 && (
+                      <p className="text-red-700">- {formatCurrency(parseFloat(outflowInput))} outflow</p>
                     )}
                     <p className="font-medium text-blue-800">
-                      Net impact: {formatCurrency((parseFloat(tempInflows) || 0) - (parseFloat(tempOutflows) || 0))}
+                      Net impact: {formatCurrency((parseFloat(inflowInput) || 0) - (parseFloat(outflowInput) || 0))}
                     </p>
-                    {tempDescription && (
-                      <p className="text-gray-700 italic">
-                        &ldquo;{tempDescription}&rdquo;
-                      </p>
-                    )}
                   </div>
                 </div>
               )}
             </div>
           </ModalBody>
+          
           <ModalFooter className="border-t border-gray-200">
-            <Button 
-              variant="light" 
-              onPress={onClose}
-              className="text-gray-600 hover:text-gray-800"
-            >
+            <Button variant="light" onPress={onClose}>
               Cancel
             </Button>
             <Button 
               color="primary" 
-              onPress={handleSavePrediction}
+              onPress={savePrediction}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              isDisabled={!tempInflows && !tempOutflows}
             >
               Save Prediction
             </Button>
