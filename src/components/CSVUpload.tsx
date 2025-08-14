@@ -227,19 +227,19 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   }, [handleFileUpload]);
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-xl border border-divider">
+    <Card className="w-full max-w-2xl mx-auto shadow-lg border border-gray-200 bg-white">
       <CardBody className="p-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2">Upload Your Financial Data</h2>
-          <p className="text-default-600">AI-powered categorization and analysis</p>
+          <h2 className="text-3xl font-bold mb-2 text-gray-900">Upload Your Financial Data</h2>
+          <p className="text-gray-600">AI-powered categorization and analysis</p>
         </div>
 
         <div
           className={`
             relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer
             ${isDragging 
-              ? 'border-primary bg-primary/5 scale-105' 
-              : 'border-default-300 hover:border-primary hover:bg-default-50'
+              ? 'border-blue-400 bg-blue-50 scale-105' 
+              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
             }
             ${isProcessing ? 'pointer-events-none' : ''}
           `}
@@ -252,15 +252,15 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
         >
           {isProcessing ? (
             <div className="space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-full border border-blue-200">
                 {isCategorizing ? (
-                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+                  <Sparkles className="h-10 w-10 text-blue-600 animate-pulse" />
                 ) : (
-                  <FileText className="h-10 w-10 text-primary animate-pulse" />
+                  <FileText className="h-10 w-10 text-blue-600 animate-pulse" />
                 )}
               </div>
               <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-xl font-semibold text-gray-900">
                   {isCategorizing ? 'AI Categorizing Transactions...' : 'Processing your file...'}
                 </h3>
                 <Progress 
@@ -269,7 +269,7 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
                   className="max-w-md mx-auto"
                   showValueLabel
                 />
-                <p className="text-sm text-default-500">
+                <p className="text-sm text-gray-600">
                   {currentStep}
                 </p>
                 {isCategorizing && (
@@ -281,14 +281,14 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full">
-                <Upload className="h-10 w-10 text-primary" />
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-full border border-blue-200">
+                <Upload className="h-10 w-10 text-blue-600" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-xl font-semibold text-gray-900">
                   {isDragging ? 'Drop your file here' : 'Choose your CSV file'}
                 </h3>
-                <p className="text-default-600">
+                <p className="text-gray-600">
                   Upload bank data for AI-powered categorization and analysis
                 </p>
                 <Button
@@ -313,12 +313,12 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
           />
 
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-danger-50/90 rounded-2xl border-2 border-danger">
+            <div className="absolute inset-0 flex items-center justify-center bg-red-50 rounded-2xl border-2 border-red-200">
               <div className="text-center space-y-3">
-                <AlertCircle className="h-12 w-12 text-danger mx-auto" />
+                <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
                 <div>
-                  <h3 className="text-lg font-semibold text-danger">Upload Failed</h3>
-                  <p className="text-sm text-danger-600">{error}</p>
+                  <h3 className="text-lg font-semibold text-red-700">Upload Failed</h3>
+                  <p className="text-sm text-red-600">{error}</p>
                 </div>
                 <Button
                   color="danger"
@@ -334,20 +334,20 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
 
         {/* Feature highlights */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-default-50 rounded-lg">
-            <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium">AI Categorization</p>
-            <p className="text-xs text-default-500">Smart expense bucketing</p>
+          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <Sparkles className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+            <p className="text-sm font-medium text-gray-900">AI Categorization</p>
+            <p className="text-xs text-gray-600">Smart expense bucketing</p>
           </div>
-          <div className="text-center p-4 bg-default-50 rounded-lg">
-            <FileText className="h-6 w-6 text-success mx-auto mb-2" />
-            <p className="text-sm font-medium">Bank CSV Support</p>
-            <p className="text-xs text-default-500">Multiple formats supported</p>
+          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+            <FileText className="h-6 w-6 text-green-600 mx-auto mb-2" />
+            <p className="text-sm font-medium text-gray-900">Bank CSV Support</p>
+            <p className="text-xs text-gray-600">Multiple formats supported</p>
           </div>
-          <div className="text-center p-4 bg-default-50 rounded-lg">
-            <Upload className="h-6 w-6 text-warning mx-auto mb-2" />
-            <p className="text-sm font-medium">Instant Processing</p>
-            <p className="text-xs text-default-500">Results in seconds</p>
+          <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+            <Upload className="h-6 w-6 text-orange-600 mx-auto mb-2" />
+            <p className="text-sm font-medium text-gray-900">Instant Processing</p>
+            <p className="text-xs text-gray-600">Results in seconds</p>
           </div>
         </div>
       </CardBody>

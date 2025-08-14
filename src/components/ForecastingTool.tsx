@@ -162,11 +162,11 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent flex items-center gap-2">
-            <Target className="h-8 w-8 text-primary" />
+          <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <Target className="h-8 w-8 text-blue-600" />
             13-Week Cash Flow Forecast
           </h2>
-          <p className="text-default-600 mt-2">
+          <p className="text-gray-600 mt-2">
             Plan and track your cash flow for the next 13 weeks
           </p>
         </div>
@@ -188,6 +188,7 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
           <Button
             variant="bordered"
             startContent={<Download className="h-4 w-4" />}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Export Forecast
           </Button>
@@ -196,44 +197,44 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border border-primary-200 bg-primary-50/50">
+        <Card className="bg-white border border-blue-200">
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm text-primary-600 font-medium">Forecast Net</p>
-              <p className="text-2xl font-bold text-primary-700">
+              <p className="text-sm text-blue-700 font-medium">Forecast Net</p>
+              <p className="text-2xl font-bold text-blue-800">
                 {formatCurrency(summary.totalForecastNet)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className={`border ${summary.totalActualNet >= 0 ? 'border-success-200 bg-success-50/50' : 'border-danger-200 bg-danger-50/50'}`}>
+        <Card className={`bg-white border ${summary.totalActualNet >= 0 ? 'border-green-200' : 'border-red-200'}`}>
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm font-medium text-default-600">Actual Net</p>
-              <p className={`text-2xl font-bold ${summary.totalActualNet >= 0 ? 'text-success-700' : 'text-danger-700'}`}>
+              <p className="text-sm font-medium text-gray-700">Actual Net</p>
+              <p className={`text-2xl font-bold ${summary.totalActualNet >= 0 ? 'text-green-800' : 'text-red-800'}`}>
                 {formatCurrency(summary.totalActualNet)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className={`border ${summary.totalVariance >= 0 ? 'border-success-200 bg-success-50/50' : 'border-danger-200 bg-danger-50/50'}`}>
+        <Card className={`bg-white border ${summary.totalVariance >= 0 ? 'border-green-200' : 'border-red-200'}`}>
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm font-medium text-default-600">Variance</p>
-              <p className={`text-2xl font-bold ${summary.totalVariance >= 0 ? 'text-success-700' : 'text-danger-700'}`}>
+              <p className="text-sm font-medium text-gray-700">Variance</p>
+              <p className={`text-2xl font-bold ${summary.totalVariance >= 0 ? 'text-green-800' : 'text-red-800'}`}>
                 {summary.totalVariance >= 0 ? '+' : ''}{formatCurrency(summary.totalVariance)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-secondary-200 bg-secondary-50/50">
+        <Card className="bg-white border border-purple-200">
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm text-secondary-600 font-medium">Accuracy</p>
-              <p className="text-2xl font-bold text-secondary-700">
+              <p className="text-sm text-purple-700 font-medium">Accuracy</p>
+              <p className="text-2xl font-bold text-purple-800">
                 {summary.accuracy.toFixed(1)}%
               </p>
             </div>
@@ -242,10 +243,10 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
       </div>
 
       {/* Forecast Table */}
-      <Card>
+      <Card className="bg-white border border-gray-200">
         <CardHeader>
           <div className="flex justify-between items-center w-full">
-            <h3 className="text-xl font-semibold">13-Week Rolling Forecast</h3>
+            <h3 className="text-xl font-semibold text-gray-900">13-Week Rolling Forecast</h3>
             <Chip color="primary" variant="flat">
               {forecastsWithActuals.filter(f => f.hasActualData).length} weeks with actual data
             </Chip>
@@ -270,19 +271,19 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
                   <TableRow key={week.weekNumber}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{week.weekLabel}</p>
-                        <p className="text-xs text-default-500">
+                        <p className="font-medium text-gray-900">{week.weekLabel}</p>
+                        <p className="text-xs text-gray-500">
                           {new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`font-medium ${week.predictedInflows > 0 ? 'text-success-600' : 'text-default-400'}`}>
+                      <span className={`font-medium ${week.predictedInflows > 0 ? 'text-green-700' : 'text-gray-400'}`}>
                         {week.predictedInflows > 0 ? formatCurrency(week.predictedInflows) : '-'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={`font-medium ${week.predictedOutflows > 0 ? 'text-danger-600' : 'text-default-400'}`}>
+                      <span className={`font-medium ${week.predictedOutflows > 0 ? 'text-red-700' : 'text-gray-400'}`}>
                         {week.predictedOutflows > 0 ? formatCurrency(week.predictedOutflows) : '-'}
                       </span>
                     </TableCell>
@@ -296,12 +297,12 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
                       </Chip>
                     </TableCell>
                     <TableCell>
-                      <span className={`font-medium ${week.hasActualData ? (week.actualInflows > 0 ? 'text-success-600' : 'text-default-400') : 'text-default-300'}`}>
+                      <span className={`font-medium ${week.hasActualData ? (week.actualInflows > 0 ? 'text-green-700' : 'text-gray-400') : 'text-gray-300'}`}>
                         {week.hasActualData ? (week.actualInflows > 0 ? formatCurrency(week.actualInflows) : '-') : 'No data'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={`font-medium ${week.hasActualData ? (week.actualOutflows > 0 ? 'text-danger-600' : 'text-default-400') : 'text-default-300'}`}>
+                      <span className={`font-medium ${week.hasActualData ? (week.actualOutflows > 0 ? 'text-red-700' : 'text-gray-400') : 'text-gray-300'}`}>
                         {week.hasActualData ? (week.actualOutflows > 0 ? formatCurrency(week.actualOutflows) : '-') : 'No data'}
                       </span>
                     </TableCell>
@@ -315,7 +316,7 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
                           {formatCurrency(week.netActual)}
                         </Chip>
                       ) : (
-                        <span className="text-default-300">No data</span>
+                        <span className="text-gray-300">No data</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -328,7 +329,7 @@ export default function ForecastingTool({ transactions }: ForecastingToolProps) 
                           {week.variance >= 0 ? '+' : ''}{formatCurrency(week.variance)}
                         </Chip>
                       ) : (
-                        <span className="text-default-300">-</span>
+                        <span className="text-gray-300">-</span>
                       )}
                     </TableCell>
                     <TableCell>

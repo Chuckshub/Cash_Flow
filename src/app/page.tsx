@@ -20,15 +20,15 @@ export default function Home() {
   // Show upload interface
   if (showUpload) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <main className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Upload Financial Data
               </h1>
-              <p className="text-slate-600 mt-1">
+              <p className="text-gray-600 mt-1">
                 Import your CSV file to analyze cash flows
               </p>
             </div>
@@ -52,15 +52,15 @@ export default function Home() {
   // Main dashboard with tabs
   if (transactions.length > 0 || activeTab === 'forecast') {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <main className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-gray-900">
                 CashFlow Pro
               </h1>
-              <p className="text-slate-600 mt-2">
+              <p className="text-gray-600 mt-2">
                 {transactions.length > 0 
                   ? `Analyzing ${transactions.length} transactions` 
                   : 'Financial analytics and forecasting platform'
@@ -97,15 +97,15 @@ export default function Home() {
               {transactions.length > 0 ? (
                 <CashFlowTable transactions={transactions} />
               ) : (
-                <Card>
+                <Card className="bg-white border border-gray-200">
                   <CardBody className="text-center py-16">
                     <div className="space-y-4">
-                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                        <BarChart3 className="h-8 w-8 text-primary" />
+                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
+                        <BarChart3 className="h-8 w-8 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-semibold mb-2">No Data Available</h3>
-                        <p className="text-slate-600 mb-6">
+                        <h3 className="text-xl font-semibold mb-2 text-gray-900">No Data Available</h3>
+                        <p className="text-gray-600 mb-6">
                           Upload your CSV file to start analyzing cash flows and see detailed analytics.
                         </p>
                         <Button
@@ -141,11 +141,11 @@ export default function Home() {
 
   // Landing page with modern design
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <main className="min-h-screen bg-white">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/30 rounded-full blur-3xl animate-bounce-subtle" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl animate-bounce-subtle" style={{ animationDelay: '1s' }} />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100/50 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-green-100/50 rounded-full blur-3xl" />
       </div>
       
       <div className="relative">
@@ -153,14 +153,14 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <BarChart3 className="h-8 w-8 text-primary" />
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+                <BarChart3 className="h-8 w-8 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-gray-900">
                   CashFlow Pro
                 </h1>
-                <p className="text-sm text-slate-500">Smart Financial Analytics & Forecasting</p>
+                <p className="text-sm text-gray-600">Smart Financial Analytics & Forecasting</p>
               </div>
             </div>
           </div>
@@ -170,15 +170,13 @@ export default function Home() {
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="max-w-4xl mx-auto space-y-12">
             <div className="space-y-6">
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="bg-gradient-to-r from-primary-600 via-primary-500 to-success-500 bg-clip-text text-transparent">
-                  Transform
-                </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+                Transform Your
                 <br />
-                <span className="text-slate-900">Your Cash Flow</span>
+                <span className="text-blue-600">Cash Flow</span>
               </h2>
               
-              <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
+              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
                 Upload your bank CSV data for AI-powered analytics and create 13-week rolling forecasts 
                 to plan your financial future with confidence.
               </p>
@@ -226,13 +224,13 @@ export default function Home() {
                   description: "Compare forecasts vs actuals for better planning"
                 }
               ].map((feature) => (
-                <Card key={feature.title} className="bg-white/60 backdrop-blur-sm border border-slate-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <Card key={feature.title} className="bg-white border border-gray-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
                   <CardBody className="p-8 text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-6">
-                      <feature.icon className="h-8 w-8 text-primary" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl mb-6 border border-blue-200">
+                      <feature.icon className="h-8 w-8 text-blue-600" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 text-slate-900">{feature.title}</h3>
-                    <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                    <h3 className="text-xl font-semibold mb-3 text-gray-900">{feature.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                   </CardBody>
                 </Card>
               ))}
@@ -240,19 +238,19 @@ export default function Home() {
 
             {/* Trust Indicators */}
             <div className="text-center mt-16">
-              <p className="text-sm text-slate-500 mb-8">Trusted by finance teams worldwide</p>
-              <div className="flex justify-center items-center gap-8 opacity-60">
+              <p className="text-sm text-gray-500 mb-8">Trusted by finance teams worldwide</p>
+              <div className="flex justify-center items-center gap-8">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-400">10K+</div>
-                  <div className="text-xs text-slate-400">Users</div>
+                  <div className="text-2xl font-bold text-gray-700">10K+</div>
+                  <div className="text-xs text-gray-500">Users</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-400">$2B+</div>
-                  <div className="text-xs text-slate-400">Processed</div>
+                  <div className="text-2xl font-bold text-gray-700">$2B+</div>
+                  <div className="text-xs text-gray-500">Processed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-400">99.9%</div>
-                  <div className="text-xs text-slate-400">Uptime</div>
+                  <div className="text-2xl font-bold text-gray-700">99.9%</div>
+                  <div className="text-xs text-gray-500">Uptime</div>
                 </div>
               </div>
             </div>

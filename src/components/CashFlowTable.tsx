@@ -182,44 +182,44 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
     <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border border-success-200 bg-success-50/50">
+        <Card className="bg-white border border-green-200">
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm text-success-600 font-medium">Total Inflows</p>
-              <p className="text-2xl font-bold text-success-700">
+              <p className="text-sm text-green-700 font-medium">Total Inflows</p>
+              <p className="text-2xl font-bold text-green-800">
                 {formatCurrency(summaryStats?.totalInflows || 0)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-danger-200 bg-danger-50/50">
+        <Card className="bg-white border border-red-200">
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm text-danger-600 font-medium">Total Outflows</p>
-              <p className="text-2xl font-bold text-danger-700">
+              <p className="text-sm text-red-700 font-medium">Total Outflows</p>
+              <p className="text-2xl font-bold text-red-800">
                 {formatCurrency(summaryStats?.totalOutflows || 0)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className={`border ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'border-success-200 bg-success-50/50' : 'border-danger-200 bg-danger-50/50'}`}>
+        <Card className={`bg-white border ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'border-green-200' : 'border-red-200'}`}>
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm font-medium text-default-600">Net Cash Flow</p>
-              <p className={`text-2xl font-bold ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'text-success-700' : 'text-danger-700'}`}>
+              <p className="text-sm font-medium text-gray-700">Net Cash Flow</p>
+              <p className={`text-2xl font-bold ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'text-green-800' : 'text-red-800'}`}>
                 {formatCurrency(summaryStats?.totalNetFlow || 0)}
               </p>
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-primary-200 bg-primary-50/50">
+        <Card className="bg-white border border-blue-200">
           <CardBody className="p-6">
             <div className="text-center">
-              <p className="text-sm text-primary-600 font-medium">AI Categories</p>
-              <p className="text-2xl font-bold text-primary-700">
+              <p className="text-sm text-blue-700 font-medium">AI Categories</p>
+              <p className="text-2xl font-bold text-blue-800">
                 {summaryStats?.categoriesFound || 0}
               </p>
             </div>
@@ -231,11 +231,11 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-default-400" />
+            <Filter className="h-4 w-4 text-gray-500" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-divider rounded-lg bg-background text-foreground"
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
               <option value="all">All Categories</option>
               {categoryBuckets.map((bucket) => (
@@ -256,6 +256,7 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         <Button
           variant="bordered"
           startContent={<Download className="h-4 w-4" />}
+          className="border-gray-300 text-gray-700 hover:bg-gray-50"
         >
           Export Report
         </Button>
@@ -268,9 +269,9 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         className="w-full"
       >
         <Tab key="weekly" title="Weekly Analysis">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <h3 className="text-xl font-semibold">Weekly Cash Flow Breakdown</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Weekly Cash Flow Breakdown</h3>
             </CardHeader>
             <CardBody>
               <Table aria-label="Weekly cash flow table">
@@ -286,19 +287,19 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                     <TableRow key={index}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{week.week}</p>
-                          <p className="text-xs text-default-500">
+                          <p className="font-medium text-gray-900">{week.week}</p>
+                          <p className="text-xs text-gray-500">
                             {new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-success-600 font-medium">
+                        <span className="text-green-700 font-medium">
                           {formatCurrency(week.inflows)}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-danger-600 font-medium">
+                        <span className="text-red-700 font-medium">
                           {formatCurrency(week.outflows)}
                         </span>
                       </TableCell>
@@ -312,7 +313,7 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                         </Chip>
                       </TableCell>
                       <TableCell>
-                        <span className="text-default-600">{week.transactionCount}</span>
+                        <span className="text-gray-700">{week.transactionCount}</span>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -323,17 +324,17 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         </Tab>
         
         <Tab key="categories" title="Category Buckets">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <h3 className="text-xl font-semibold">AI-Categorized Expenses</h3>
+                <Sparkles className="h-5 w-5 text-blue-600" />
+                <h3 className="text-xl font-semibold text-gray-900">AI-Categorized Expenses</h3>
               </div>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
                 {categoryBuckets.map((bucket, index) => (
-                  <div key={index} className="p-4 bg-default-50 rounded-lg">
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-3">
                         <Chip 
@@ -343,13 +344,13 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                         >
                           {bucket.name}
                         </Chip>
-                        <span className="text-sm text-default-500">
+                        <span className="text-sm text-gray-600">
                           {bucket.count} transactions
                         </span>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg">{formatCurrency(bucket.total)}</p>
-                        <p className="text-xs text-default-500">{bucket.percentage.toFixed(1)}% of total</p>
+                        <p className="font-bold text-lg text-gray-900">{formatCurrency(bucket.total)}</p>
+                        <p className="text-xs text-gray-500">{bucket.percentage.toFixed(1)}% of total</p>
                       </div>
                     </div>
                     
@@ -357,18 +358,18 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                     <div className="mt-3 space-y-2">
                       {bucket.transactions.slice(0, 3).map((transaction, txIndex) => (
                         <div key={txIndex} className="flex justify-between items-center text-sm">
-                          <span className="text-default-600 truncate flex-1 mr-4">
+                          <span className="text-gray-700 truncate flex-1 mr-4">
                             {transaction.description}
                           </span>
                           <span className={`font-medium ${
-                            transaction.type === 'inflow' ? 'text-success-600' : 'text-danger-600'
+                            transaction.type === 'inflow' ? 'text-green-700' : 'text-red-700'
                           }`}>
                             {transaction.type === 'inflow' ? '+' : '-'}{formatCurrency(transaction.amount)}
                           </span>
                         </div>
                       ))}
                       {bucket.transactions.length > 3 && (
-                        <p className="text-xs text-default-400 text-center">
+                        <p className="text-xs text-gray-500 text-center">
                           +{bucket.transactions.length - 3} more transactions
                         </p>
                       )}
