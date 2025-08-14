@@ -28,24 +28,56 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   const parseCSVData = useCallback((csvData: CSVRow[]) => {
     const transactions: Transaction[] = [];
     
-    csvData.forEach((row, index) => {
-      if (index === 0) return; // Skip header row
+    csvData.forEach((row) => {
+      // Skip empty rows
+      if (!row.Date && !row.date) return;
       
-      // Try to detect common CSV formats
       let date: string;
       let description: string;
       let amount: number;
       
-      // Common bank CSV formats
+      // Handle Coder Technologies bank format
       if (row.Date || row.date) {
-        date = row.Date || row.date || '';
-        description = row.Description || row.description || row.Memo || row.memo || '';
-        amount = parseFloat(row.Amount || row.amount || row.Debit || row.debit || row.Credit || row.credit || '0');
+        const rawDate = row.Date || row.date || '';
+        description = row.Description || row.description || '';
+        const rawAmount = row.Amount || row.amount || '0';
+        
+        // Parse date from "Aug 7, 2025" format to ISO format
+        try {
+          const parsedDate = new Date(rawDate);
+          date = parsedDate.toISOString().split('T')[0];
+        } catch {
+          // Fallback for invalid dates
+          date = new Date().toISOString().split('T')[0];
+        }
+        
+        // Parse amount - remove $ signs, commas, and handle negative values
+        const cleanAmount = rawAmount.toString()
+          .replace(/[$,]/g, '')
+          .replace(/[()]/g, '') // Remove parentheses if present
+          .trim();
+        
+        // Handle negative amounts that start with -
+        if (cleanAmount.startsWith('-')) {
+          amount = -parseFloat(cleanAmount.substring(1));
+        } else {
+          amount = parseFloat(cleanAmount);
+        }
+        
+        // Skip if amount is invalid
+        if (isNaN(amount)) return;
+        
       } else if (row['0'] && row['1']) {
-        // Assume first column is date, second is description, third is amount
+        // Fallback for generic CSV format
         date = row['0'] || '';
         description = row['1'] || '';
         amount = parseFloat(row['2'] || '0');
+        
+        try {
+          date = new Date(date).toISOString().split('T')[0];
+        } catch {
+          date = new Date().toISOString().split('T')[0];
+        }
       } else {
         return; // Skip invalid rows
       }
@@ -54,7 +86,7 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
       const type: 'inflow' | 'outflow' = amount >= 0 ? 'inflow' : 'outflow';
       
       transactions.push({
-        date: new Date(date).toISOString().split('T')[0], // Normalize date format
+        date,
         description: description.trim(),
         amount: Math.abs(amount),
         type
@@ -158,9 +190,10 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
             <div className="text-xs text-gray-500 mt-4">
               <p>Supported formats:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li>Date, Description, Amount columns</li>
-                <li>Standard bank export formats</li>
-                <li>CSV files with headers</li>
+                <li>Bank export CSV files (Date, Description, Amount)</li>
+                <li>Commercial banking formats with transaction types</li>
+                <li>Files with currency symbols ($) and commas</li>
+                <li>Standard CSV files with headers</li>
               </ul>
             </div>
           </div>
