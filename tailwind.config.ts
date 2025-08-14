@@ -22,6 +22,7 @@ const config: Config = {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
+          DEFAULT: '#0ea5e9',
         },
         success: {
           50: '#f0fdf4',
@@ -34,6 +35,20 @@ const config: Config = {
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
+          DEFAULT: '#22c55e',
+        },
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+          DEFAULT: '#f59e0b',
         },
         danger: {
           50: '#fef2f2',
@@ -46,15 +61,8 @@ const config: Config = {
           700: '#b91c1c',
           800: '#991b1b',
           900: '#7f1d1d',
+          DEFAULT: '#ef4444',
         },
-        background: {
-          light: '#ffffff',
-          dark: '#0a0a0a',
-        },
-        foreground: {
-          light: '#11181c',
-          dark: '#ecedee',
-        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -79,52 +87,8 @@ const config: Config = {
           '50%': { transform: 'translateY(-5px)' },
         },
       },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
     },
   },
-  darkMode: "class",
-  plugins: [
-    heroui({
-      themes: {
-        light: {
-          colors: {
-            primary: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              200: '#bae6fd',
-              300: '#7dd3fc',
-              400: '#38bdf8',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-              800: '#075985',
-              900: '#0c4a6e',
-              DEFAULT: '#0ea5e9',
-            },
-          },
-        },
-        dark: {
-          colors: {
-            primary: {
-              50: '#0c4a6e',
-              100: '#075985',
-              200: '#0369a1',
-              300: '#0284c7',
-              400: '#0ea5e9',
-              500: '#38bdf8',
-              600: '#7dd3fc',
-              700: '#bae6fd',
-              800: '#e0f2fe',
-              900: '#f0f9ff',
-              DEFAULT: '#38bdf8',
-            },
-          },
-        },
-      },
-    }),
-  ],
+  plugins: [heroui()],
 };
 export default config;

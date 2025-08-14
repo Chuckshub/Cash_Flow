@@ -1,56 +1,26 @@
 "use client";
 
 import { useState } from 'react';
-import { Button, Card, CardBody } from '@heroui/react';
-import { Upload, BarChart3, TrendingUp } from 'lucide-react';
+import { Button, Card, CardBody, Tabs, Tab } from '@heroui/react';
+import { Upload, BarChart3, TrendingUp, Target } from 'lucide-react';
 import CSVUpload, { Transaction } from '@/components/CSVUpload';
 import CashFlowTable from '@/components/CashFlowTable';
+import ForecastingTool from '@/components/ForecastingTool';
 
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showUpload, setShowUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState('analytics');
 
   const handleDataParsed = (parsedTransactions: Transaction[]) => {
     setTransactions(parsedTransactions);
     setShowUpload(false);
   };
 
-  // Show cash flow dashboard if we have data
-  if (transactions.length > 0) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-background via-primary-50/30 to-success-50/30">
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
-                Cash Flow Analytics
-              </h1>
-              <p className="text-default-600 mt-2">
-                Analyzing {transactions.length} transactions
-              </p>
-            </div>
-            
-            <Button
-              color="primary"
-              variant="bordered"
-              startContent={<Upload className="h-4 w-4" />}
-              onClick={() => setTransactions([])}
-            >
-              Upload New File
-            </Button>
-          </div>
-          
-          <CashFlowTable transactions={transactions} />
-        </div>
-      </main>
-    );
-  }
-
   // Show upload interface
   if (showUpload) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-background via-primary-50/30 to-success-50/30">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
@@ -58,7 +28,7 @@ export default function Home() {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
                 Upload Financial Data
               </h1>
-              <p className="text-default-600 mt-1">
+              <p className="text-slate-600 mt-1">
                 Import your CSV file to analyze cash flows
               </p>
             </div>
@@ -79,13 +49,103 @@ export default function Home() {
     );
   }
 
+  // Main dashboard with tabs
+  if (transactions.length > 0 || activeTab === 'forecast') {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
+                CashFlow Pro
+              </h1>
+              <p className="text-slate-600 mt-2">
+                {transactions.length > 0 
+                  ? `Analyzing ${transactions.length} transactions` 
+                  : 'Financial analytics and forecasting platform'
+                }
+              </p>
+            </div>
+            
+            <Button
+              color="primary"
+              variant="bordered"
+              startContent={<Upload className="h-4 w-4" />}
+              onClick={() => setShowUpload(true)}
+            >
+              {transactions.length > 0 ? 'Upload New File' : 'Upload Data'}
+            </Button>
+          </div>
+
+          {/* Main Content Tabs */}
+          <Tabs 
+            selectedKey={activeTab} 
+            onSelectionChange={(key) => setActiveTab(key as string)}
+            className="w-full"
+            size="lg"
+          >
+            <Tab 
+              key="analytics" 
+              title={
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Analytics</span>
+                </div>
+              }
+            >
+              {transactions.length > 0 ? (
+                <CashFlowTable transactions={transactions} />
+              ) : (
+                <Card>
+                  <CardBody className="text-center py-16">
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                        <BarChart3 className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2">No Data Available</h3>
+                        <p className="text-slate-600 mb-6">
+                          Upload your CSV file to start analyzing cash flows and see detailed analytics.
+                        </p>
+                        <Button
+                          color="primary"
+                          startContent={<Upload className="h-4 w-4" />}
+                          onClick={() => setShowUpload(true)}
+                        >
+                          Upload Your Data
+                        </Button>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+            </Tab>
+            
+            <Tab 
+              key="forecast" 
+              title={
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  <span>13-Week Forecast</span>
+                </div>
+              }
+            >
+              <ForecastingTool transactions={transactions} />
+            </Tab>
+          </Tabs>
+        </div>
+      </main>
+    );
+  }
+
   // Landing page with modern design
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-primary-50/30 to-success-50/30">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-200/30 rounded-full blur-3xl animate-bounce-subtle" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-success-200/30 rounded-full blur-3xl animate-bounce-subtle" style={{ animationDelay: '1s' }} />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/30 rounded-full blur-3xl animate-bounce-subtle" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl animate-bounce-subtle" style={{ animationDelay: '1s' }} />
       </div>
       
       <div className="relative">
@@ -100,7 +160,7 @@ export default function Home() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-success-500 bg-clip-text text-transparent">
                   CashFlow Pro
                 </h1>
-                <p className="text-sm text-default-500">Smart Financial Analytics</p>
+                <p className="text-sm text-slate-500">Smart Financial Analytics & Forecasting</p>
               </div>
             </div>
           </div>
@@ -115,12 +175,12 @@ export default function Home() {
                   Transform
                 </span>
                 <br />
-                <span className="text-foreground">Your Cash Flow</span>
+                <span className="text-slate-900">Your Cash Flow</span>
               </h2>
               
-              <p className="text-lg sm:text-xl text-default-600 leading-relaxed max-w-3xl mx-auto">
-                Upload your bank CSV data and get instant, actionable insights with our 
-                AI-powered analytics platform. Analyze weekly cash flows and make smarter financial decisions.
+              <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
+                Upload your bank CSV data for AI-powered analytics and create 13-week rolling forecasts 
+                to plan your financial future with confidence.
               </p>
             </div>
             
@@ -133,16 +193,17 @@ export default function Home() {
                 onClick={() => setShowUpload(true)}
                 className="px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Get Started
+                Upload & Analyze
               </Button>
               
               <Button
                 size="lg"
                 variant="bordered"
-                startContent={<TrendingUp className="h-5 w-5" />}
+                startContent={<Target className="h-5 w-5" />}
                 className="px-8 py-6 text-lg font-semibold border-2 transition-all duration-300"
+                onClick={() => setActiveTab('forecast')}
               >
-                View Demo
+                Start Forecasting
               </Button>
             </div>
 
@@ -152,26 +213,26 @@ export default function Home() {
                 {
                   icon: BarChart3,
                   title: "Smart Analytics",
-                  description: "AI-powered insights from your financial data"
+                  description: "AI-powered transaction categorization and insights"
+                },
+                {
+                  icon: Target,
+                  title: "13-Week Forecasting",
+                  description: "Rolling cash flow predictions with variance tracking"
                 },
                 {
                   icon: TrendingUp,
-                  title: "Weekly Reports",
-                  description: "Comprehensive cash flow analysis by week"
-                },
-                {
-                  icon: Upload,
-                  title: "Easy Upload",
-                  description: "Drag & drop CSV files for instant processing"
+                  title: "Variance Analysis",
+                  description: "Compare forecasts vs actuals for better planning"
                 }
               ].map((feature) => (
-                <Card key={feature.title} className="bg-background/60 backdrop-blur-sm border border-divider hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <Card key={feature.title} className="bg-white/60 backdrop-blur-sm border border-slate-200 hover:shadow-lg transition-all duration-300 hover:scale-105">
                   <CardBody className="p-8 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-6">
                       <feature.icon className="h-8 w-8 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                    <p className="text-default-600 leading-relaxed">{feature.description}</p>
+                    <h3 className="text-xl font-semibold mb-3 text-slate-900">{feature.title}</h3>
+                    <p className="text-slate-600 leading-relaxed">{feature.description}</p>
                   </CardBody>
                 </Card>
               ))}
@@ -179,19 +240,19 @@ export default function Home() {
 
             {/* Trust Indicators */}
             <div className="text-center mt-16">
-              <p className="text-sm text-default-500 mb-8">Trusted by finance teams worldwide</p>
+              <p className="text-sm text-slate-500 mb-8">Trusted by finance teams worldwide</p>
               <div className="flex justify-center items-center gap-8 opacity-60">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-default-400">10K+</div>
-                  <div className="text-xs text-default-400">Users</div>
+                  <div className="text-2xl font-bold text-slate-400">10K+</div>
+                  <div className="text-xs text-slate-400">Users</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-default-400">$2B+</div>
-                  <div className="text-xs text-default-400">Processed</div>
+                  <div className="text-2xl font-bold text-slate-400">$2B+</div>
+                  <div className="text-xs text-slate-400">Processed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-default-400">99.9%</div>
-                  <div className="text-xs text-default-400">Uptime</div>
+                  <div className="text-2xl font-bold text-slate-400">99.9%</div>
+                  <div className="text-xs text-slate-400">Uptime</div>
                 </div>
               </div>
             </div>
