@@ -23,7 +23,7 @@ import {
   Select,
   SelectItem
 } from '@heroui/react';
-import { Plus, Edit, Save, X, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { Plus, Save, X, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import { Transaction } from './CSVUpload';
 
 interface WeekData {
@@ -414,8 +414,8 @@ export default function WeeklyCashFlowForecast({
                     setNewPrediction(prev => ({ ...prev, type }));
                   }}
                 >
-                  <SelectItem key="inflow" value="inflow">Inflow</SelectItem>
-                  <SelectItem key="outflow" value="outflow">Outflow</SelectItem>
+                  <SelectItem key="inflow">Inflow</SelectItem>
+                  <SelectItem key="outflow">Outflow</SelectItem>
                 </Select>
                 
                 <Input

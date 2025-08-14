@@ -19,8 +19,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  useDisclosure,
-  Divider
+  useDisclosure
 } from '@heroui/react';
 import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign } from 'lucide-react';
 import { Transaction } from './CSVUpload';

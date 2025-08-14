@@ -14,9 +14,7 @@ import {
   Chip,
   Tabs,
   Tab,
-  Button,
-  Select,
-  SelectItem
+  Button
 } from '@heroui/react';
 import { Filter, Download, Sparkles } from 'lucide-react';
 import { Transaction } from './CSVUpload';
@@ -326,7 +324,7 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         <Tab key="forecast" title="13-Week Forecast">
           <WeeklyCashFlowTable 
             transactions={transactions} 
-            startingBalance={summaryStats?.totalNetFlow || 0}
+            initialBalance={summaryStats?.totalNetFlow || 0}
           />
         </Tab>
         
