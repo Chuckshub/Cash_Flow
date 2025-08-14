@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { HeroUIProvider } from "@heroui/react";
+import { ThemeProvider } from "next-themes";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "Cash Flow Tracker",
-  description: "Track weekly cash flows from bank data",
+  title: "CashFlow Pro - Smart Financial Analytics",
+  description: "Transform your bank data into actionable insights with our modern cash flow analytics platform",
+  keywords: ["cash flow", "financial analytics", "bank data", "business intelligence"],
+  authors: [{ name: "CashFlow Pro Team" }],
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -24,13 +23,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <HeroUIProvider>
-          {children}
-        </HeroUIProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <HeroUIProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              {children}
+            </div>
+          </HeroUIProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
