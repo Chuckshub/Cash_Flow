@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { Card, CardBody, Button } from '@heroui/react';
+import { Card, CardBody, Button, Progress, Chip } from '@heroui/react';
+import { Upload, FileText, Sparkles, AlertCircle } from 'lucide-react';
 import Papa from 'papaparse';
 
 export interface Transaction {
@@ -10,6 +11,8 @@ export interface Transaction {
   amount: number;
   type: 'inflow' | 'outflow';
   category?: string;
+  subcategory?: string;
+  confidence?: number;
 }
 
 interface CSVRow {
@@ -23,66 +26,49 @@ interface CSVUploadProps {
 export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const parseCSVData = useCallback((csvData: CSVRow[]) => {
     const transactions: Transaction[] = [];
     
     csvData.forEach((row) => {
-      // Skip empty rows
       if (!row.Date && !row.date) return;
       
       let date: string;
       let description: string;
       let amount: number;
       
-      // Handle Coder Technologies bank format
       if (row.Date || row.date) {
         const rawDate = row.Date || row.date || '';
         description = row.Description || row.description || '';
         const rawAmount = row.Amount || row.amount || '0';
         
-        // Parse date from "Aug 7, 2025" format to ISO format
         try {
           const parsedDate = new Date(rawDate);
           date = parsedDate.toISOString().split('T')[0];
         } catch {
-          // Fallback for invalid dates
           date = new Date().toISOString().split('T')[0];
         }
         
-        // Parse amount - remove $ signs, commas, and handle negative values
         const cleanAmount = rawAmount.toString()
           .replace(/[$,]/g, '')
-          .replace(/[()]/g, '') // Remove parentheses if present
+          .replace(/[()]/g, '')
           .trim();
         
-        // Handle negative amounts that start with -
         if (cleanAmount.startsWith('-')) {
           amount = -parseFloat(cleanAmount.substring(1));
         } else {
           amount = parseFloat(cleanAmount);
         }
         
-        // Skip if amount is invalid
         if (isNaN(amount)) return;
-        
-      } else if (row['0'] && row['1']) {
-        // Fallback for generic CSV format
-        date = row['0'] || '';
-        description = row['1'] || '';
-        amount = parseFloat(row['2'] || '0');
-        
-        try {
-          date = new Date(date).toISOString().split('T')[0];
-        } catch {
-          date = new Date().toISOString().split('T')[0];
-        }
       } else {
-        return; // Skip invalid rows
+        return;
       }
       
-      // Determine if it's inflow or outflow
       const type: 'inflow' | 'outflow' = amount >= 0 ? 'inflow' : 'outflow';
       
       transactions.push({
@@ -96,29 +82,107 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
     return transactions;
   }, []);
 
+  const categorizeWithAI = useCallback(async (transactions: Transaction[]) => {
+    setIsCategorizing(true);
+    setCurrentStep('Sending data to AI for categorization...');
+    setProgress(70);
+    
+    try {
+      const response = await fetch('/api/categorize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transactions }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to categorize transactions');
+      }
+      
+      const data = await response.json();
+      setProgress(100);
+      setCurrentStep('Categorization complete!');
+      
+      setTimeout(() => {
+        onDataParsed(data.categorizedTransactions);
+        setIsProcessing(false);
+        setIsCategorizing(false);
+        setProgress(0);
+        setCurrentStep('');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Categorization error:', error);
+      setCurrentStep('AI categorization failed, using basic categories...');
+      
+      // Fallback: use basic categorization
+      const basicCategorized = transactions.map(t => ({
+        ...t,
+        category: t.type === 'inflow' ? 'Revenue' : 'Business Expenses',
+        confidence: 0.5
+      }));
+      
+      setTimeout(() => {
+        onDataParsed(basicCategorized);
+        setIsProcessing(false);
+        setIsCategorizing(false);
+        setProgress(0);
+        setCurrentStep('');
+      }, 1000);
+    }
+  }, [onDataParsed]);
+
   const handleFileUpload = useCallback((file: File) => {
     setIsProcessing(true);
     setError(null);
+    setProgress(0);
+    setCurrentStep('Reading CSV file...');
+    
+    // Simulate initial progress
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 50) {
+          clearInterval(progressInterval);
+          return 50;
+        }
+        return prev + 10;
+      });
+    }, 200);
     
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => {
         try {
+          setCurrentStep('Parsing transaction data...');
           const transactions = parseCSVData(results.data as CSVRow[]);
-          onDataParsed(transactions);
-          setIsProcessing(false);
+          setProgress(60);
+          
+          if (transactions.length === 0) {
+            setError('No valid transactions found in the CSV file.');
+            setIsProcessing(false);
+            return;
+          }
+          
+          // Send to OpenAI for categorization
+          await categorizeWithAI(transactions);
+          
         } catch {
           setError('Error parsing CSV file. Please check the format.');
           setIsProcessing(false);
+          setProgress(0);
+          setCurrentStep('');
         }
       },
       error: (error) => {
         setError(`Error reading file: ${error.message}`);
         setIsProcessing(false);
+        setProgress(0);
+        setCurrentStep('');
       }
     });
-  }, [parseCSVData, onDataParsed]);
+  }, [parseCSVData, categorizeWithAI]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -142,12 +206,22 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   }, [handleFileUpload]);
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto shadow-xl border border-divider">
       <CardBody className="p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-2">Upload Your Financial Data</h2>
+          <p className="text-default-600">AI-powered categorization and analysis</p>
+        </div>
+
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging ? 'border-primary bg-primary/10' : 'border-gray-300'
-          }`}
+          className={`
+            relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer
+            ${isDragging 
+              ? 'border-primary bg-primary/5 scale-105' 
+              : 'border-default-300 hover:border-primary hover:bg-default-50'
+            }
+            ${isProcessing ? 'pointer-events-none' : ''}
+          `}
           onDrop={handleDrop}
           onDragOver={(e) => {
             e.preventDefault();
@@ -155,47 +229,104 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
           }}
           onDragLeave={() => setIsDragging(false)}
         >
-          <div className="space-y-4">
-            <div className="text-6xl">📊</div>
-            <h3 className="text-xl font-semibold">Upload Bank CSV Data</h3>
-            <p className="text-gray-600">
-              Drag and drop your bank CSV file here, or click to select
-            </p>
-            
-            <div className="space-y-2">
-              <Button
-                color="primary"
-                size="lg"
-                isLoading={isProcessing}
-                onClick={() => document.getElementById('csv-input')?.click()}
-              >
-                {isProcessing ? 'Processing...' : 'Select CSV File'}
-              </Button>
-              
-              <input
-                id="csv-input"
-                type="file"
-                accept=".csv"
-                onChange={handleFileInput}
-                className="hidden"
-              />
-            </div>
-            
-            {error && (
-              <div className="text-red-500 text-sm mt-2">
-                {error}
+          {isProcessing ? (
+            <div className="space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full">
+                {isCategorizing ? (
+                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+                ) : (
+                  <FileText className="h-10 w-10 text-primary animate-pulse" />
+                )}
               </div>
-            )}
-            
-            <div className="text-xs text-gray-500 mt-4">
-              <p>Supported formats:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Bank export CSV files (Date, Description, Amount)</li>
-                <li>Commercial banking formats with transaction types</li>
-                <li>Files with currency symbols ($) and commas</li>
-                <li>Standard CSV files with headers</li>
-              </ul>
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold">
+                  {isCategorizing ? 'AI Categorizing Transactions...' : 'Processing your file...'}
+                </h3>
+                <Progress 
+                  value={progress} 
+                  color="primary" 
+                  className="max-w-md mx-auto"
+                  showValueLabel
+                />
+                <p className="text-sm text-default-500">
+                  {currentStep}
+                </p>
+                {isCategorizing && (
+                  <Chip color="secondary" variant="flat" startContent={<Sparkles className="h-3 w-3" />}>
+                    AI Processing
+                  </Chip>
+                )}
+              </div>
             </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full">
+                <Upload className="h-10 w-10 text-primary" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold">
+                  {isDragging ? 'Drop your file here' : 'Choose your CSV file'}
+                </h3>
+                <p className="text-default-600">
+                  Upload bank data for AI-powered categorization and analysis
+                </p>
+                <Button
+                  color="primary"
+                  variant="solid"
+                  size="lg"
+                  startContent={<Upload className="h-5 w-5" />}
+                  onClick={() => document.getElementById('csv-input')?.click()}
+                >
+                  Browse Files
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <input
+            id="csv-input"
+            type="file"
+            accept=".csv"
+            onChange={handleFileInput}
+            className="hidden"
+          />
+
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-danger-50/90 rounded-2xl border-2 border-danger">
+              <div className="text-center space-y-3">
+                <AlertCircle className="h-12 w-12 text-danger mx-auto" />
+                <div>
+                  <h3 className="text-lg font-semibold text-danger">Upload Failed</h3>
+                  <p className="text-sm text-danger-600">{error}</p>
+                </div>
+                <Button
+                  color="danger"
+                  variant="light"
+                  onClick={() => setError(null)}
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Feature highlights */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-default-50 rounded-lg">
+            <Sparkles className="h-6 w-6 text-primary mx-auto mb-2" />
+            <p className="text-sm font-medium">AI Categorization</p>
+            <p className="text-xs text-default-500">Smart expense bucketing</p>
+          </div>
+          <div className="text-center p-4 bg-default-50 rounded-lg">
+            <FileText className="h-6 w-6 text-success mx-auto mb-2" />
+            <p className="text-sm font-medium">Bank CSV Support</p>
+            <p className="text-xs text-default-500">Multiple formats supported</p>
+          </div>
+          <div className="text-center p-4 bg-default-50 rounded-lg">
+            <Upload className="h-6 w-6 text-warning mx-auto mb-2" />
+            <p className="text-sm font-medium">Instant Processing</p>
+            <p className="text-xs text-default-500">Results in seconds</p>
           </div>
         </div>
       </CardBody>
