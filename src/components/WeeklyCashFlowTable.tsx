@@ -401,8 +401,8 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
             <TableHeader>
               <TableColumn>WEEK</TableColumn>
               <TableColumn>ACTUAL INFLOWS</TableColumn>
-              <TableColumn>PREDICTED INFLOWS</TableColumn>
               <TableColumn>ACTUAL OUTFLOWS</TableColumn>
+              <TableColumn>PREDICTED INFLOWS</TableColumn>
               <TableColumn>PREDICTED OUTFLOWS</TableColumn>
               <TableColumn>NET FLOW</TableColumn>
               <TableColumn>RUNNING BALANCE</TableColumn>
@@ -420,7 +420,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                       {week.hasActualData && (
                         <div className="mt-2 space-y-1">
                           <Chip size="sm" color="success" variant="flat" className="bg-green-100 text-green-800">
-                            {week.transactionCount} transactions
+                            📊 {week.transactionCount} actual transactions
                           </Chip>
                           {Object.keys(week.categoryBreakdown).length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
@@ -446,46 +446,78 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-semibold ${
-                      week.actualInflows > 0 ? 'text-green-700' : 'text-gray-400'
-                    }`}>
-                      {formatCurrency(week.actualInflows)}
-                    </span>
+                    <div>
+                      <span className={`font-semibold text-lg ${
+                        week.actualInflows > 0 ? 'text-green-700' : 'text-gray-400'
+                      }`}>
+                        {formatCurrency(week.actualInflows)}
+                      </span>
+                      {week.actualInflows > 0 && (
+                        <p className="text-xs text-green-600 mt-1">From uploaded data</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-semibold ${
-                      week.predictedInflows > 0 ? 'text-blue-700' : 'text-gray-400'
-                    }`}>
-                      {formatCurrency(week.predictedInflows)}
-                    </span>
+                    <div>
+                      <span className={`font-semibold text-lg ${
+                        week.actualOutflows > 0 ? 'text-red-700' : 'text-gray-400'
+                      }`}>
+                        {formatCurrency(week.actualOutflows)}
+                      </span>
+                      {week.actualOutflows > 0 && (
+                        <p className="text-xs text-red-600 mt-1">From uploaded data</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-semibold ${
-                      week.actualOutflows > 0 ? 'text-red-700' : 'text-gray-400'
-                    }`}>
-                      {formatCurrency(week.actualOutflows)}
-                    </span>
+                    <div>
+                      <span className={`font-semibold text-lg ${
+                        week.predictedInflows > 0 ? 'text-blue-700' : 'text-gray-400'
+                      }`}>
+                        {formatCurrency(week.predictedInflows)}
+                      </span>
+                      {week.predictedInflows > 0 && (
+                        <p className="text-xs text-blue-600 mt-1">💡 Predicted</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-semibold ${
-                      week.predictedOutflows > 0 ? 'text-orange-700' : 'text-gray-400'
-                    }`}>
-                      {formatCurrency(week.predictedOutflows)}
-                    </span>
+                    <div>
+                      <span className={`font-semibold text-lg ${
+                        week.predictedOutflows > 0 ? 'text-orange-700' : 'text-gray-400'
+                      }`}>
+                        {formatCurrency(week.predictedOutflows)}
+                      </span>
+                      {week.predictedOutflows > 0 && (
+                        <p className="text-xs text-orange-600 mt-1">💡 Predicted</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      color={week.netFlow >= 0 ? 'success' : 'danger'}
-                      variant="flat"
-                      size="sm"
-                      className={week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
-                    >
-                      {formatCurrency(week.netFlow)}
-                    </Chip>
+                    <div className="text-center">
+                      <Chip
+                        color={week.netFlow >= 0 ? 'success' : 'danger'}
+                        variant="flat"
+                        size="md"
+                        className={`font-bold ${
+                          week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {formatCurrency(week.netFlow)}
+                      </Chip>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {week.actualInflows + week.actualOutflows > 0 && week.predictedInflows + week.predictedOutflows > 0 
+                          ? 'Actual + Predicted'
+                          : week.actualInflows + week.actualOutflows > 0 
+                          ? 'From actual data'
+                          : 'From predictions'
+                        }
+                      </p>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={`font-bold ${
+                      <span className={`font-bold text-lg ${
                         week.runningBalance >= 0 ? 'text-green-700' : 'text-red-700'
                       }`}>
                         {formatCurrency(week.runningBalance)}
@@ -496,16 +528,30 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      startContent={<Edit className="h-3 w-3" />}
-                      onClick={() => handleEditPrediction(week.weekNumber)}
-                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium"
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        variant="solid"
+                        color="primary"
+                        startContent={<Plus className="h-3 w-3" />}
+                        onClick={() => handleEditPrediction(week.weekNumber)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3 py-1"
+                      >
+                        Add Prediction
+                      </Button>
+                      {(week.predictedInflows > 0 || week.predictedOutflows > 0) && (
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="secondary"
+                          startContent={<Edit className="h-3 w-3" />}
+                          onClick={() => handleEditPrediction(week.weekNumber)}
+                          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 font-medium text-xs"
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -515,49 +561,133 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
       </Card>
 
       {/* Edit Prediction Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="md" className="bg-white">
+      <Modal isOpen={isOpen} onClose={onClose} size="lg" className="bg-white">
         <ModalContent>
           <ModalHeader className="border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900">Edit Predictions for Week {editingWeek}</h3>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Manage Predictions for Week {editingWeek}</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Add predicted cash flows with descriptions to improve your forecast accuracy
+              </p>
+            </div>
           </ModalHeader>
           <ModalBody className="p-6">
-            <div className="space-y-4">
-              <Input
-                label="Predicted Inflows"
-                placeholder="0.00"
-                value={tempInflows}
-                onChange={(e) => setTempInflows(e.target.value)}
-                startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                type="number"
-                step="0.01"
-                classNames={{
-                  input: "text-gray-900",
-                  label: "text-gray-700 font-medium"
-                }}
-              />
-              <Input
-                label="Predicted Outflows"
-                placeholder="0.00"
-                value={tempOutflows}
-                onChange={(e) => setTempOutflows(e.target.value)}
-                startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
-                type="number"
-                step="0.01"
-                classNames={{
-                  input: "text-gray-900",
-                  label: "text-gray-700 font-medium"
-                }}
-              />
-              <Input
-                label="Description (Optional)"
-                placeholder="e.g., Expected payroll, vendor payment"
-                value={tempDescription}
-                onChange={(e) => setTempDescription(e.target.value)}
-                classNames={{
-                  input: "text-gray-900",
-                  label: "text-gray-700 font-medium"
-                }}
-              />
+            {/* Show current week info */}
+            {editingWeek && weeklyData[editingWeek - 1] && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Week {editingWeek}: {formatDateRange(weeklyData[editingWeek - 1].weekStart, weeklyData[editingWeek - 1].weekEnd)}
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-green-700 font-medium">
+                      Actual Inflows: {formatCurrency(weeklyData[editingWeek - 1].actualInflows)}
+                    </p>
+                    <p className="text-red-700 font-medium">
+                      Actual Outflows: {formatCurrency(weeklyData[editingWeek - 1].actualOutflows)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-blue-700 font-medium">
+                      Current Predicted Inflows: {formatCurrency(weeklyData[editingWeek - 1].predictedInflows)}
+                    </p>
+                    <p className="text-orange-700 font-medium">
+                      Current Predicted Outflows: {formatCurrency(weeklyData[editingWeek - 1].predictedOutflows)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-green-800 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Predicted Inflows
+                  </h4>
+                  <Input
+                    label="Amount"
+                    placeholder="0.00"
+                    value={tempInflows}
+                    onChange={(e) => setTempInflows(e.target.value)}
+                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
+                    type="number"
+                    step="0.01"
+                    classNames={{
+                      input: "text-gray-900",
+                      label: "text-gray-700 font-medium"
+                    }}
+                  />
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-red-800 flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" />
+                    Predicted Outflows
+                  </h4>
+                  <Input
+                    label="Amount"
+                    placeholder="0.00"
+                    value={tempOutflows}
+                    onChange={(e) => setTempOutflows(e.target.value)}
+                    startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
+                    type="number"
+                    step="0.01"
+                    classNames={{
+                      input: "text-gray-900",
+                      label: "text-gray-700 font-medium"
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <Edit className="h-4 w-4" />
+                  Description
+                </h4>
+                <Input
+                  label="Describe this prediction"
+                  placeholder="e.g., Expected client payment, Quarterly rent, Payroll processing"
+                  value={tempDescription}
+                  onChange={(e) => setTempDescription(e.target.value)}
+                  classNames={{
+                    input: "text-gray-900",
+                    label: "text-gray-700 font-medium"
+                  }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Adding descriptions helps you track and remember your predictions
+                </p>
+              </div>
+              
+              {/* Prediction Summary */}
+              {(parseFloat(tempInflows) > 0 || parseFloat(tempOutflows) > 0) && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-2">Prediction Summary</h4>
+                  <div className="space-y-1 text-sm">
+                    {parseFloat(tempInflows) > 0 && (
+                      <p className="text-green-700">
+                        + {formatCurrency(parseFloat(tempInflows))} inflow
+                      </p>
+                    )}
+                    {parseFloat(tempOutflows) > 0 && (
+                      <p className="text-red-700">
+                        - {formatCurrency(parseFloat(tempOutflows))} outflow
+                      </p>
+                    )}
+                    <p className="font-medium text-blue-800">
+                      Net impact: {formatCurrency((parseFloat(tempInflows) || 0) - (parseFloat(tempOutflows) || 0))}
+                    </p>
+                    {tempDescription && (
+                      <p className="text-gray-700 italic">
+                        &ldquo;{tempDescription}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </ModalBody>
           <ModalFooter className="border-t border-gray-200">
@@ -572,6 +702,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
               color="primary" 
               onPress={handleSavePrediction}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+              isDisabled={!tempInflows && !tempOutflows}
             >
               Save Prediction
             </Button>
