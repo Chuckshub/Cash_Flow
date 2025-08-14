@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,9 +33,11 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <HeroUIProvider>
-            <div className="min-h-screen bg-background text-foreground">
-              {children}
-            </div>
+            <AuthProvider>
+              <div className="min-h-screen bg-background text-foreground">
+                {children}
+              </div>
+            </AuthProvider>
           </HeroUIProvider>
         </ThemeProvider>
       </body>
