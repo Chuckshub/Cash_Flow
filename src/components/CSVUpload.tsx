@@ -83,11 +83,13 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   }, []);
 
   const categorizeWithAI = useCallback(async (transactions: Transaction[]) => {
+    console.log('🤖 [DEBUG] Starting AI categorization with', transactions.length, 'transactions');
     setIsCategorizing(true);
     setCurrentStep('Sending data to AI for categorization...');
     setProgress(70);
     
     try {
+      console.log('🤖 [DEBUG] Sending request to /api/categorize');
       const response = await fetch('/api/categorize', {
         method: 'POST',
         headers: {
@@ -96,15 +98,21 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
         body: JSON.stringify({ transactions }),
       });
       
+      console.log('🤖 [DEBUG] API response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to categorize transactions');
+        const errorText = await response.text();
+        console.error('🤖 [DEBUG] API error response:', errorText);
+        throw new Error(`Failed to categorize transactions: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('🤖 [DEBUG] Received categorized data:', data);
       setProgress(100);
       setCurrentStep('Categorization complete!');
       
       setTimeout(() => {
+        console.log('🤖 [DEBUG] Calling onDataParsed with categorized transactions');
         onDataParsed(data.categorizedTransactions);
         setIsProcessing(false);
         setIsCategorizing(false);
@@ -113,7 +121,7 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
       }, 1000);
       
     } catch (error) {
-      console.error('Categorization error:', error);
+      console.error('🤖 [DEBUG] Categorization error:', error);
       setCurrentStep('AI categorization failed, using basic categories...');
       
       // Fallback: use basic categorization
@@ -122,6 +130,8 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
         category: t.type === 'inflow' ? 'Revenue' : 'Business Expenses',
         confidence: 0.5
       }));
+      
+      console.log('🤖 [DEBUG] Using fallback categorization:', basicCategorized.length, 'transactions');
       
       setTimeout(() => {
         onDataParsed(basicCategorized);
@@ -134,6 +144,7 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
   }, [onDataParsed]);
 
   const handleFileUpload = useCallback((file: File) => {
+    console.log('📁 [DEBUG] Starting file upload:', file.name, file.size, 'bytes');
     setIsProcessing(true);
     setError(null);
     setProgress(0);
@@ -142,7 +153,9 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
     // Simulate initial progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
+        console.log('📁 [DEBUG] Progress update:', prev, '-> ', prev + 10);
         if (prev >= 50) {
+          console.log('📁 [DEBUG] Reached 50%, stopping progress interval');
           clearInterval(progressInterval);
           return 50;
         }
@@ -150,25 +163,32 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
       });
     }, 200);
     
+    console.log('📁 [DEBUG] Starting Papa.parse');
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
+        console.log('📁 [DEBUG] Papa.parse complete, results:', results);
         try {
           setCurrentStep('Parsing transaction data...');
+          console.log('📁 [DEBUG] Calling parseCSVData with', results.data.length, 'rows');
           const transactions = parseCSVData(results.data as CSVRow[]);
+          console.log('📁 [DEBUG] Parsed', transactions.length, 'valid transactions');
           setProgress(60);
           
           if (transactions.length === 0) {
+            console.log('📁 [DEBUG] No transactions found, showing error');
             setError('No valid transactions found in the CSV file.');
             setIsProcessing(false);
             return;
           }
           
+          console.log('📁 [DEBUG] About to call categorizeWithAI');
           // Send to OpenAI for categorization
           await categorizeWithAI(transactions);
           
-        } catch {
+        } catch (error) {
+          console.error('📁 [DEBUG] Error in complete handler:', error);
           setError('Error parsing CSV file. Please check the format.');
           setIsProcessing(false);
           setProgress(0);
@@ -176,6 +196,7 @@ export default function CSVUpload({ onDataParsed }: CSVUploadProps) {
         }
       },
       error: (error) => {
+        console.error('📁 [DEBUG] Papa.parse error:', error);
         setError(`Error reading file: ${error.message}`);
         setIsProcessing(false);
         setProgress(0);

@@ -52,7 +52,10 @@ export const INCOME_CATEGORIES = [
 ];
 
 export async function categorizeTransactions(transactions: Transaction[]): Promise<CategorizedTransaction[]> {
+  console.log('🧠 [DEBUG] categorizeTransactions called with', transactions.length, 'transactions');
+  
   try {
+    console.log('🧠 [DEBUG] Building prompt for OpenAI');
     const prompt = `
 You are a financial analyst AI. Analyze these business transactions and categorize them into appropriate buckets.
 
@@ -87,6 +90,9 @@ Rules:
 
 Respond with ONLY the JSON array, no other text.`;
 
+    console.log('🧠 [DEBUG] Calling OpenAI API with prompt length:', prompt.length);
+    console.log('🧠 [DEBUG] API Key present:', !!process.env.OPENAI_API_KEY);
+    
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -103,23 +109,38 @@ Respond with ONLY the JSON array, no other text.`;
       max_tokens: 4000
     });
 
+    console.log('🧠 [DEBUG] OpenAI response received:', {
+      choices: response.choices?.length,
+      usage: response.usage
+    });
+
     const content = response.choices[0]?.message?.content;
     if (!content) {
+      console.log('🧠 [DEBUG] No content in OpenAI response');
       throw new Error('No response from OpenAI');
     }
 
+    console.log('🧠 [DEBUG] OpenAI content length:', content.length);
+    console.log('🧠 [DEBUG] OpenAI content preview:', content.substring(0, 200));
+
     // Parse the JSON response
     const categorizedTransactions = JSON.parse(content);
+    console.log('🧠 [DEBUG] Successfully parsed', categorizedTransactions.length, 'categorized transactions');
     return categorizedTransactions;
 
   } catch (error) {
-    console.error('Error categorizing transactions:', error);
+    console.error('🧠 [DEBUG] Error categorizing transactions:', error);
+    console.log('🧠 [DEBUG] Falling back to basic categorization');
+    
     // Fallback: return transactions with basic categorization
-    return transactions.map(transaction => ({
+    const fallbackTransactions = transactions.map(transaction => ({
       ...transaction,
       category: transaction.type === 'inflow' ? 'Revenue' : 'Other Business Expenses',
       confidence: 0.5
     }));
+    
+    console.log('🧠 [DEBUG] Returning', fallbackTransactions.length, 'fallback transactions');
+    return fallbackTransactions;
   }
 }
 
