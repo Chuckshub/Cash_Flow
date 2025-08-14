@@ -21,7 +21,7 @@ import {
   ModalFooter,
   useDisclosure
 } from '@heroui/react';
-import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle } from 'lucide-react';
+import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle, Sparkles } from 'lucide-react';
 import { Transaction } from './CSVUpload';
 
 interface WeekData {
@@ -39,6 +39,7 @@ interface WeekData {
   runningBalance: number;
   hasActualData: boolean;
   transactionCount: number;
+  categoryBreakdown: { [category: string]: { inflows: number; outflows: number; count: number } };
 }
 
 interface PredictionEntry {
@@ -113,6 +114,22 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
         .filter(t => t.type === 'outflow')
         .reduce((sum, t) => sum + t.amount, 0);
       
+      // Calculate category breakdown for this week
+      const categoryBreakdown: { [category: string]: { inflows: number; outflows: number; count: number } } = {};
+      weekTransactions.forEach(transaction => {
+        const category = transaction.category || 'Uncategorized';
+        if (!categoryBreakdown[category]) {
+          categoryBreakdown[category] = { inflows: 0, outflows: 0, count: 0 };
+        }
+        
+        if (transaction.type === 'inflow') {
+          categoryBreakdown[category].inflows += transaction.amount;
+        } else {
+          categoryBreakdown[category].outflows += transaction.amount;
+        }
+        categoryBreakdown[category].count += 1;
+      });
+      
       // Get predictions for this week
       const prediction = predictions.find(p => p.weekNumber === i + 1);
       const predictedInflows = prediction?.inflows || 0;
@@ -141,7 +158,8 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
         netFlow,
         runningBalance,
         hasActualData,
-        transactionCount: weekTransactions.length
+        transactionCount: weekTransactions.length,
+        categoryBreakdown
       });
     }
     
@@ -205,8 +223,63 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
   const totalNetFlow = weeklyData.reduce((sum, week) => sum + week.netFlow, 0);
   const finalBalance = weeklyData[weeklyData.length - 1]?.runningBalance || initialBalance;
 
+  // Calculate category distribution across all weeks
+  const categoryDistribution = useMemo(() => {
+    const distribution: { [category: string]: { totalAmount: number; weekCount: number; transactions: number } } = {};
+    
+    weeklyData.forEach(week => {
+      Object.entries(week.categoryBreakdown).forEach(([category, data]) => {
+        if (!distribution[category]) {
+          distribution[category] = { totalAmount: 0, weekCount: 0, transactions: 0 };
+        }
+        distribution[category].totalAmount += data.inflows + data.outflows;
+        distribution[category].weekCount += 1;
+        distribution[category].transactions += data.count;
+      });
+    });
+    
+    return Object.entries(distribution)
+      .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+      .slice(0, 6); // Top 6 categories
+  }, [weeklyData]);
+
   return (
     <div className="space-y-6">
+      {/* AI Category Distribution Banner */}
+      {categoryDistribution.length > 0 && (
+        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
+          <CardBody className="p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <Sparkles className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">AI-Categorized Data Distribution</h3>
+                  <p className="text-gray-600">Your uploaded transactions automatically organized across 13 weeks</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                {categoryDistribution.map(([category, data]) => (
+                  <div key={category} className="text-center p-3 bg-white rounded-lg border border-purple-200">
+                    <p className="text-sm font-semibold text-gray-900 truncate" title={category}>
+                      {category}
+                    </p>
+                    <p className="text-xs text-purple-700 font-medium">
+                      {formatCurrency(data.totalAmount)}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {data.transactions} transactions • {data.weekCount} weeks
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white border border-green-200 shadow-sm hover:shadow-md transition-shadow">
@@ -345,9 +418,30 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                         {formatDateRange(week.weekStart, week.weekEnd)}
                       </p>
                       {week.hasActualData && (
-                        <Chip size="sm" color="success" variant="flat" className="mt-1 bg-green-100 text-green-800">
-                          {week.transactionCount} transactions
-                        </Chip>
+                        <div className="mt-2 space-y-1">
+                          <Chip size="sm" color="success" variant="flat" className="bg-green-100 text-green-800">
+                            {week.transactionCount} transactions
+                          </Chip>
+                          {Object.keys(week.categoryBreakdown).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {Object.entries(week.categoryBreakdown).slice(0, 2).map(([category, data]) => (
+                                <Chip 
+                                  key={category} 
+                                  size="sm" 
+                                  variant="flat" 
+                                  className="bg-purple-100 text-purple-800 text-xs"
+                                >
+                                  {category}: {data.count}
+                                </Chip>
+                              ))}
+                              {Object.keys(week.categoryBreakdown).length > 2 && (
+                                <Chip size="sm" variant="flat" className="bg-gray-100 text-gray-600 text-xs">
+                                  +{Object.keys(week.categoryBreakdown).length - 2} more
+                                </Chip>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </TableCell>
