@@ -21,7 +21,7 @@ import {
   ModalFooter,
   useDisclosure
 } from '@heroui/react';
-import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Edit, TrendingUp, TrendingDown, Calendar, DollarSign, Target, AlertCircle } from 'lucide-react';
 import { Transaction } from './CSVUpload';
 
 interface WeekData {
@@ -209,87 +209,122 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-success-200 bg-success-50/50">
+        <Card className="bg-white border border-green-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-success-600" />
-                <p className="text-sm text-success-600 font-medium">Total Inflows</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700 mb-1">Total Inflows</p>
+                <p className="text-xl font-bold text-green-800">
+                  {formatCurrency(totalActualInflows + totalPredictedInflows)}
+                </p>
+                <div className="text-xs text-green-600 mt-1">
+                  Actual: {formatCurrency(totalActualInflows)} | Predicted: {formatCurrency(totalPredictedInflows)}
+                </div>
               </div>
-              <p className="text-xl font-bold text-success-700">
-                {formatCurrency(totalActualInflows + totalPredictedInflows)}
-              </p>
-              <div className="text-xs text-success-600 mt-1">
-                Actual: {formatCurrency(totalActualInflows)} | Predicted: {formatCurrency(totalPredictedInflows)}
-              </div>
+              <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-danger-200 bg-danger-50/50">
+        <Card className="bg-white border border-red-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <TrendingDown className="h-4 w-4 text-danger-600" />
-                <p className="text-sm text-danger-600 font-medium">Total Outflows</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-700 mb-1">Total Outflows</p>
+                <p className="text-xl font-bold text-red-800">
+                  {formatCurrency(totalActualOutflows + totalPredictedOutflows)}
+                </p>
+                <div className="text-xs text-red-600 mt-1">
+                  Actual: {formatCurrency(totalActualOutflows)} | Predicted: {formatCurrency(totalPredictedOutflows)}
+                </div>
               </div>
-              <p className="text-xl font-bold text-danger-700">
-                {formatCurrency(totalActualOutflows + totalPredictedOutflows)}
-              </p>
-              <div className="text-xs text-danger-600 mt-1">
-                Actual: {formatCurrency(totalActualOutflows)} | Predicted: {formatCurrency(totalPredictedOutflows)}
-              </div>
+              <TrendingDown className="h-6 w-6 text-red-600" />
             </div>
           </CardBody>
         </Card>
         
-        <Card className={`border ${totalNetFlow >= 0 ? 'border-success-200 bg-success-50/50' : 'border-danger-200 bg-danger-50/50'}`}>
+        <Card className={`bg-white border shadow-sm hover:shadow-md transition-shadow ${totalNetFlow >= 0 ? 'border-green-200' : 'border-red-200'}`}>
           <CardBody className="p-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-default-600" />
-                <p className="text-sm font-medium text-default-600">Net Cash Flow</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-1">Net Cash Flow</p>
+                <p className={`text-xl font-bold ${totalNetFlow >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                  {formatCurrency(totalNetFlow)}
+                </p>
               </div>
-              <p className={`text-xl font-bold ${totalNetFlow >= 0 ? 'text-success-700' : 'text-danger-700'}`}>
-                {formatCurrency(totalNetFlow)}
-              </p>
+              <DollarSign className="h-6 w-6 text-gray-600" />
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-primary-200 bg-primary-50/50">
+        <Card className="bg-white border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-primary-600" />
-                <p className="text-sm text-primary-600 font-medium">Final Balance</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700 mb-1">Final Balance</p>
+                <p className={`text-xl font-bold ${finalBalance >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
+                  {formatCurrency(finalBalance)}
+                </p>
               </div>
-              <p className={`text-xl font-bold ${finalBalance >= 0 ? 'text-primary-700' : 'text-danger-700'}`}>
-                {formatCurrency(finalBalance)}
-              </p>
+              <Calendar className="h-6 w-6 text-blue-600" />
             </div>
           </CardBody>
         </Card>
       </div>
 
-      {/* 13-Week Cash Flow Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <h3 className="text-xl font-semibold">13-Week Rolling Cash Flow</h3>
-            <p className="text-sm text-default-500">Actual data from uploads + predicted flows</p>
+      {/* Action Banner */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
+        <CardBody className="p-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Target className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">13-Week Cash Flow Forecast</h3>
+                <p className="text-gray-600">Plan ahead with predictive analytics and scenario modeling</p>
+              </div>
+            </div>
+            <Button
+              color="primary"
+              variant="solid"
+              size="lg"
+              startContent={<Plus className="h-5 w-5" />}
+              onClick={() => handleEditPrediction(1)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
+            >
+              Add Predictions
+            </Button>
           </div>
-          <Button
-            color="primary"
-            variant="flat"
-            startContent={<Plus className="h-4 w-4" />}
-            onClick={() => handleEditPrediction(1)}
-          >
-            Add Predictions
-          </Button>
+        </CardBody>
+      </Card>
+
+      {/* 13-Week Cash Flow Table */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="border-b border-gray-100 p-6">
+          <div className="flex flex-row items-center justify-between w-full">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">13-Week Rolling Forecast</h3>
+              <p className="text-gray-600 mt-1">Actual data from uploads + predicted cash flows</p>
+            </div>
+            <Chip 
+              color="secondary" 
+              variant="flat"
+              className="bg-purple-100 text-purple-800 font-medium"
+            >
+              Interactive Planning
+            </Chip>
+          </div>
         </CardHeader>
-        <CardBody>
-          <Table aria-label="13-week cash flow table">
+        <CardBody className="p-0">
+          <Table 
+            aria-label="13-week cash flow table"
+            classNames={{
+              wrapper: "bg-white rounded-none",
+              th: "bg-gray-50 text-gray-700 font-semibold border-b border-gray-200",
+              td: "text-gray-900 border-b border-gray-100"
+            }}
+          >
             <TableHeader>
               <TableColumn>WEEK</TableColumn>
               <TableColumn>ACTUAL INFLOWS</TableColumn>
@@ -302,37 +337,45 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
             </TableHeader>
             <TableBody>
               {weeklyData.map((week) => (
-                <TableRow key={week.weekNumber}>
+                <TableRow key={week.weekNumber} className="hover:bg-gray-50 transition-colors">
                   <TableCell>
                     <div>
-                      <p className="font-medium">{week.weekLabel}</p>
-                      <p className="text-xs text-default-500">
+                      <p className="font-semibold text-gray-900">{week.weekLabel}</p>
+                      <p className="text-sm text-gray-600">
                         {formatDateRange(week.weekStart, week.weekEnd)}
                       </p>
                       {week.hasActualData && (
-                        <Chip size="sm" color="success" variant="flat" className="mt-1">
+                        <Chip size="sm" color="success" variant="flat" className="mt-1 bg-green-100 text-green-800">
                           {week.transactionCount} transactions
                         </Chip>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-medium ${week.actualInflows > 0 ? 'text-success-600' : 'text-default-400'}`}>
+                    <span className={`font-semibold ${
+                      week.actualInflows > 0 ? 'text-green-700' : 'text-gray-400'
+                    }`}>
                       {formatCurrency(week.actualInflows)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-medium ${week.predictedInflows > 0 ? 'text-primary-600' : 'text-default-400'}`}>
+                    <span className={`font-semibold ${
+                      week.predictedInflows > 0 ? 'text-blue-700' : 'text-gray-400'
+                    }`}>
                       {formatCurrency(week.predictedInflows)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-medium ${week.actualOutflows > 0 ? 'text-danger-600' : 'text-default-400'}`}>
+                    <span className={`font-semibold ${
+                      week.actualOutflows > 0 ? 'text-red-700' : 'text-gray-400'
+                    }`}>
                       {formatCurrency(week.actualOutflows)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-medium ${week.predictedOutflows > 0 ? 'text-warning-600' : 'text-default-400'}`}>
+                    <span className={`font-semibold ${
+                      week.predictedOutflows > 0 ? 'text-orange-700' : 'text-gray-400'
+                    }`}>
                       {formatCurrency(week.predictedOutflows)}
                     </span>
                   </TableCell>
@@ -341,21 +384,31 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
                       color={week.netFlow >= 0 ? 'success' : 'danger'}
                       variant="flat"
                       size="sm"
+                      className={week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                     >
                       {formatCurrency(week.netFlow)}
                     </Chip>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-medium ${week.runningBalance >= 0 ? 'text-success-600' : 'text-danger-600'}`}>
-                      {formatCurrency(week.runningBalance)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-bold ${
+                        week.runningBalance >= 0 ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {formatCurrency(week.runningBalance)}
+                      </span>
+                      {week.runningBalance < 0 && (
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button
                       size="sm"
                       variant="light"
+                      color="primary"
                       startContent={<Edit className="h-3 w-3" />}
                       onClick={() => handleEditPrediction(week.weekNumber)}
+                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium"
                     >
                       Edit
                     </Button>
@@ -368,44 +421,64 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
       </Card>
 
       {/* Edit Prediction Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="md">
+      <Modal isOpen={isOpen} onClose={onClose} size="md" className="bg-white">
         <ModalContent>
-          <ModalHeader>
-            <h3>Edit Predictions for Week {editingWeek}</h3>
+          <ModalHeader className="border-b border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900">Edit Predictions for Week {editingWeek}</h3>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody className="p-6">
             <div className="space-y-4">
               <Input
                 label="Predicted Inflows"
                 placeholder="0.00"
                 value={tempInflows}
                 onChange={(e) => setTempInflows(e.target.value)}
-                startContent={<DollarSign className="h-4 w-4 text-default-400" />}
+                startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
                 type="number"
                 step="0.01"
+                classNames={{
+                  input: "text-gray-900",
+                  label: "text-gray-700 font-medium"
+                }}
               />
               <Input
                 label="Predicted Outflows"
                 placeholder="0.00"
                 value={tempOutflows}
                 onChange={(e) => setTempOutflows(e.target.value)}
-                startContent={<DollarSign className="h-4 w-4 text-default-400" />}
+                startContent={<DollarSign className="h-4 w-4 text-gray-400" />}
                 type="number"
                 step="0.01"
+                classNames={{
+                  input: "text-gray-900",
+                  label: "text-gray-700 font-medium"
+                }}
               />
               <Input
                 label="Description (Optional)"
                 placeholder="e.g., Expected payroll, vendor payment"
                 value={tempDescription}
                 onChange={(e) => setTempDescription(e.target.value)}
+                classNames={{
+                  input: "text-gray-900",
+                  label: "text-gray-700 font-medium"
+                }}
               />
             </div>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onClose}>
+          <ModalFooter className="border-t border-gray-200">
+            <Button 
+              variant="light" 
+              onPress={onClose}
+              className="text-gray-600 hover:text-gray-800"
+            >
               Cancel
             </Button>
-            <Button color="primary" onPress={handleSavePrediction}>
+            <Button 
+              color="primary" 
+              onPress={handleSavePrediction}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            >
               Save Prediction
             </Button>
           </ModalFooter>

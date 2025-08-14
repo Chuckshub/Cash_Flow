@@ -16,7 +16,7 @@ import {
   Tab,
   Button
 } from '@heroui/react';
-import { Filter, Download, Sparkles } from 'lucide-react';
+import { Filter, Download, Sparkles, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { Transaction } from './CSVUpload';
 import WeeklyCashFlowTable from './WeeklyCashFlowTable';
 
@@ -45,7 +45,7 @@ interface CashFlowTableProps {
 
 export default function CashFlowTable({ transactions }: CashFlowTableProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState('weekly');
+  const [activeTab, setActiveTab] = useState('forecast'); // Default to forecast tab
 
   const { weeklyData, categoryBuckets, summaryStats } = useMemo(() => {
     if (!transactions.length) return { weeklyData: [], categoryBuckets: [], summaryStats: null };
@@ -169,9 +169,11 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
 
   if (!transactions.length) {
     return (
-      <Card className="w-full">
-        <CardBody className="text-center py-8">
-          <p className="text-default-500">No data to display. Please upload a CSV file.</p>
+      <Card className="w-full bg-white border border-gray-200 shadow-sm">
+        <CardBody className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data Available</h3>
+          <p className="text-gray-600">Please upload a CSV file to start analyzing your cash flow.</p>
         </CardBody>
       </Card>
     );
@@ -181,60 +183,95 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
     <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border border-success-200 bg-success-50/50">
+        <Card className="bg-white border border-green-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-success-600 font-medium">Total Inflows</p>
-              <p className="text-2xl font-bold text-success-700">
-                {formatCurrency(summaryStats?.totalInflows || 0)}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700 mb-1">Total Inflows</p>
+                <p className="text-2xl font-bold text-green-800">
+                  {formatCurrency(summaryStats?.totalInflows || 0)}
+                </p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-xl">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-danger-200 bg-danger-50/50">
+        <Card className="bg-white border border-red-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-danger-600 font-medium">Total Outflows</p>
-              <p className="text-2xl font-bold text-danger-700">
-                {formatCurrency(summaryStats?.totalOutflows || 0)}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-700 mb-1">Total Outflows</p>
+                <p className="text-2xl font-bold text-red-800">
+                  {formatCurrency(summaryStats?.totalOutflows || 0)}
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-xl">
+                <TrendingDown className="h-6 w-6 text-red-600" />
+              </div>
             </div>
           </CardBody>
         </Card>
         
-        <Card className={`border ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'border-success-200 bg-success-50/50' : 'border-danger-200 bg-danger-50/50'}`}>
+        <Card className={`bg-white border shadow-sm hover:shadow-md transition-shadow ${
+          (summaryStats?.totalNetFlow || 0) >= 0 
+            ? 'border-green-200' 
+            : 'border-red-200'
+        }`}>
           <CardBody className="p-6">
-            <div className="text-center">
-              <p className="text-sm font-medium text-default-600">Net Cash Flow</p>
-              <p className={`text-2xl font-bold ${(summaryStats?.totalNetFlow || 0) >= 0 ? 'text-success-700' : 'text-danger-700'}`}>
-                {formatCurrency(summaryStats?.totalNetFlow || 0)}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-1">Net Cash Flow</p>
+                <p className={`text-2xl font-bold ${
+                  (summaryStats?.totalNetFlow || 0) >= 0 
+                    ? 'text-green-800' 
+                    : 'text-red-800'
+                }`}>
+                  {formatCurrency(summaryStats?.totalNetFlow || 0)}
+                </p>
+              </div>
+              <div className={`p-3 rounded-xl ${
+                (summaryStats?.totalNetFlow || 0) >= 0 
+                  ? 'bg-green-100' 
+                  : 'bg-red-100'
+              }`}>
+                {(summaryStats?.totalNetFlow || 0) >= 0 
+                  ? <TrendingUp className="h-6 w-6 text-green-600" />
+                  : <TrendingDown className="h-6 w-6 text-red-600" />
+                }
+              </div>
             </div>
           </CardBody>
         </Card>
         
-        <Card className="border border-primary-200 bg-primary-50/50">
+        <Card className="bg-white border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-primary-600 font-medium">AI Categories</p>
-              <p className="text-2xl font-bold text-primary-700">
-                {summaryStats?.categoriesFound || 0}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700 mb-1">AI Categories</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {summaryStats?.categoriesFound || 0}
+                </p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Sparkles className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </CardBody>
         </Card>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 bg-gray-50 rounded-xl border border-gray-200">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-default-400" />
+            <Filter className="h-5 w-5 text-gray-600" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-divider rounded-lg bg-background text-foreground"
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Categories</option>
               {categoryBuckets.map((bucket) => (
@@ -246,15 +283,22 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
           </div>
           
           {transactions.some(t => t.category) && (
-            <Chip color="secondary" variant="flat" startContent={<Sparkles className="h-3 w-3" />}>
+            <Chip 
+              color="secondary" 
+              variant="flat" 
+              startContent={<Sparkles className="h-3 w-3" />}
+              className="bg-purple-100 text-purple-800 font-medium"
+            >
               AI Categorized
             </Chip>
           )}
         </div>
         
         <Button
-          variant="bordered"
+          variant="solid"
+          color="primary"
           startContent={<Download className="h-4 w-4" />}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all"
         >
           Export Report
         </Button>
@@ -265,14 +309,34 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         selectedKey={activeTab} 
         onSelectionChange={(key) => setActiveTab(key as string)}
         className="w-full"
+        classNames={{
+          tabList: "bg-gray-100 p-1 rounded-xl",
+          tab: "text-gray-700 font-medium",
+          tabContent: "text-gray-900 font-semibold",
+          cursor: "bg-white shadow-sm"
+        }}
       >
-        <Tab key="weekly" title="Weekly Analysis">
-          <Card>
-            <CardHeader>
-              <h3 className="text-xl font-semibold">Weekly Cash Flow Breakdown</h3>
+        <Tab key="forecast" title="📊 13-Week Forecast">
+          <WeeklyCashFlowTable 
+            transactions={transactions} 
+            initialBalance={summaryStats?.totalNetFlow || 0}
+          />
+        </Tab>
+        
+        <Tab key="weekly" title="📈 Weekly Analysis">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader className="border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900">Weekly Cash Flow Breakdown</h3>
             </CardHeader>
             <CardBody>
-              <Table aria-label="Weekly cash flow table">
+              <Table 
+                aria-label="Weekly cash flow table"
+                classNames={{
+                  wrapper: "bg-white",
+                  th: "bg-gray-50 text-gray-700 font-semibold",
+                  td: "text-gray-900"
+                }}
+              >
                 <TableHeader>
                   <TableColumn>WEEK</TableColumn>
                   <TableColumn>INFLOWS</TableColumn>
@@ -282,22 +346,22 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                 </TableHeader>
                 <TableBody>
                   {weeklyData.map((week, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={index} className="hover:bg-gray-50">
                       <TableCell>
                         <div>
-                          <p className="font-medium">{week.week}</p>
-                          <p className="text-xs text-default-500">
+                          <p className="font-semibold text-gray-900">{week.week}</p>
+                          <p className="text-sm text-gray-600">
                             {new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-success-600 font-medium">
+                        <span className="text-green-700 font-semibold">
                           {formatCurrency(week.inflows)}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-danger-600 font-medium">
+                        <span className="text-red-700 font-semibold">
                           {formatCurrency(week.outflows)}
                         </span>
                       </TableCell>
@@ -306,12 +370,13 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
                           color={week.netFlow >= 0 ? 'success' : 'danger'}
                           variant="flat"
                           size="sm"
+                          className={week.netFlow >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                         >
                           {formatCurrency(week.netFlow)}
                         </Chip>
                       </TableCell>
                       <TableCell>
-                        <span className="text-default-600">{week.transactionCount}</span>
+                        <span className="text-gray-700 font-medium">{week.transactionCount}</span>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -321,14 +386,7 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
           </Card>
         </Tab>
         
-        <Tab key="forecast" title="13-Week Forecast">
-          <WeeklyCashFlowTable 
-            transactions={transactions} 
-            initialBalance={summaryStats?.totalNetFlow || 0}
-          />
-        </Tab>
-        
-        <Tab key="categories" title="Category Buckets">
+        <Tab key="categories" title="🏷️ Category Analysis">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
