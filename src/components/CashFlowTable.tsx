@@ -158,12 +158,12 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Revenue': 'success',
-      'Payroll & Benefits': 'primary',
-      'Technology & Software': 'secondary',
-      'Office & Operations': 'warning',
-      'Marketing & Advertising': 'danger',
-      'Professional Services': 'default'
+      'Reimbursements': 'primary',
+      'Payroll': 'success', 
+      'Vendor Payments': 'warning',
+      'Equity or Funding Proceeds': 'secondary',
+      'Customer Receipts': 'success',
+      'Other / Misc': 'default'
     };
     return colors[category as keyof typeof colors] || 'default';
   };
