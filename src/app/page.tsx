@@ -103,15 +103,10 @@ export default function Home() {
                 <p className="text-sm text-default-500">Smart Financial Analytics</p>
               </div>
             </div>
-          </div>
-        </div>
-        
-        {/* Hero Content */}
-        <div className="container mx-auto px-4 py-16 text-center">
-          <div className="max-w-4xl mx-auto space-y-12">
+            
             <div className="space-y-6">
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="bg-gradient-to-r from-primary-600 via-primary-500 to-success-500 bg-clip-text text-transparent">
+              <h2 className="text-4xl sm:text-6xl font-bold leading-tight">
+                <span className="bg-gradient-to-r from-primary-600 via-secondary-500 to-success-500 bg-clip-text text-transparent">
                   Transform
                 </span>
                 <br />

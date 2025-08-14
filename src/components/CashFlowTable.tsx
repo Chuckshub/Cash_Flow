@@ -20,6 +20,7 @@ import {
 } from '@heroui/react';
 import { Filter, Download, Sparkles } from 'lucide-react';
 import { Transaction } from './CSVUpload';
+import WeeklyCashFlowTable from './WeeklyCashFlowTable';
 
 interface WeeklyCashFlow {
   week: string;
@@ -320,6 +321,13 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
               </Table>
             </CardBody>
           </Card>
+        </Tab>
+        
+        <Tab key="forecast" title="13-Week Forecast">
+          <WeeklyCashFlowTable 
+            transactions={transactions} 
+            startingBalance={summaryStats?.totalNetFlow || 0}
+          />
         </Tab>
         
         <Tab key="categories" title="Category Buckets">
