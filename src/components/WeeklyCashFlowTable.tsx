@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Table,
   TableHeader,
@@ -47,7 +47,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Get starting week based on transactions or current week
-  const getStartingWeekStart = () => {
+  const getStartingWeekStart = useCallback(() => {
     if (transactions.length === 0) {
       // No transactions, start from current week
       const now = new Date();
@@ -67,7 +67,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     weekStart.setDate(earliestDate.getDate() - dayOfWeek);
     weekStart.setHours(0, 0, 0, 0);
     return weekStart;
-  };
+  }, [transactions]);
 
   // Generate 13 weeks of data
   const weeklyData = useMemo(() => {
@@ -137,7 +137,7 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
     });
     
     return weeks;
-  }, [transactions, predictions, initialBalance]);
+  }, [transactions, predictions, initialBalance, getStartingWeekStart]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

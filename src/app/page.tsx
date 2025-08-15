@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Card, CardBody } from '@heroui/react';
-import { Upload, BarChart3, TrendingUp, Zap, Target, DollarSign } from 'lucide-react';
+import { Upload, BarChart3, TrendingUp, Zap, Target } from 'lucide-react';
 import CSVUpload, { Transaction } from '@/components/CSVUpload';
 import CashFlowTable from '@/components/CashFlowTable';
 
@@ -145,7 +145,7 @@ export default function Home() {
               </h2>
               <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
                 Upload your financial data to generate 13-week rolling forecasts, analyze cash flow patterns, 
-                and track your organization's financial health.
+                and track your organization&apos;s financial health.
               </p>
               
               <Button
