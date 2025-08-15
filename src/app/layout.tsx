@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { HeroUIProvider } from "@heroui/react";
+import { Providers } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,11 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <HeroUIProvider>
+        <Providers>
           <div className="min-h-screen bg-background text-foreground">
             {children}
           </div>
-        </HeroUIProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -46,19 +46,32 @@ export default function WeeklyCashFlowTable({ transactions, initialBalance = 0 }
   const [descriptionInput, setDescriptionInput] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Get current week start (Sunday)
-  const getCurrentWeekStart = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - dayOfWeek);
+  // Get starting week based on transactions or current week
+  const getStartingWeekStart = () => {
+    if (transactions.length === 0) {
+      // No transactions, start from current week
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - dayOfWeek);
+      weekStart.setHours(0, 0, 0, 0);
+      return weekStart;
+    }
+    
+    // Find the earliest transaction date
+    const earliestDate = new Date(Math.min(...transactions.map(t => new Date(t.date).getTime())));
+    
+    // Start from the week containing the earliest transaction
+    const dayOfWeek = earliestDate.getDay();
+    const weekStart = new Date(earliestDate);
+    weekStart.setDate(earliestDate.getDate() - dayOfWeek);
     weekStart.setHours(0, 0, 0, 0);
     return weekStart;
   };
 
   // Generate 13 weeks of data
   const weeklyData = useMemo(() => {
-    const currentWeekStart = getCurrentWeekStart();
+    const currentWeekStart = getStartingWeekStart();
     const weeks = [];
     
     for (let i = 0; i < 13; i++) {

@@ -319,7 +319,7 @@ export default function CashFlowTable({ transactions }: CashFlowTableProps) {
         <Tab key="forecast" title="📊 13-Week Forecast">
           <WeeklyCashFlowTable 
             transactions={transactions} 
-            initialBalance={summaryStats?.totalNetFlow || 0}
+            initialBalance={0}
           />
         </Tab>
         
